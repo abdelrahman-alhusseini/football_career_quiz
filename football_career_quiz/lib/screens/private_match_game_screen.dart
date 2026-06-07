@@ -48,6 +48,52 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
     );
   }
 
+  String _formatPlayerStatus(String status) {
+    final normalized = status.trim().toLowerCase();
+
+    if (normalized == 'active' || normalized == 'current') {
+      return 'Active';
+    }
+
+    if (normalized == 'retired') {
+      return 'Retired';
+    }
+
+    if (status.trim().isEmpty) {
+      return 'Unknown';
+    }
+
+    return status.trim();
+  }
+
+  IconData _statusIcon(String status) {
+    final normalized = status.trim().toLowerCase();
+
+    if (normalized == 'active' || normalized == 'current') {
+      return Icons.flash_on_rounded;
+    }
+
+    if (normalized == 'retired') {
+      return Icons.history_rounded;
+    }
+
+    return Icons.info_outline_rounded;
+  }
+
+  Color _statusColor(String status) {
+    final normalized = status.trim().toLowerCase();
+
+    if (normalized == 'active' || normalized == 'current') {
+      return AppTheme.pitchGreen;
+    }
+
+    if (normalized == 'retired') {
+      return AppTheme.gold;
+    }
+
+    return AppTheme.subText;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +118,10 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                   onCopy: () => _copyRoomCode(match.roomCode!),
                   onBack: () async {
                     await match.leaveRoom();
-                    if (context.mounted) Navigator.pop(context);
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
                   },
                 );
               }
@@ -90,9 +139,6 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                 );
               }
 
-              final correctGuess = match.firstCorrectGuess;
-              final lockedByMe = correctGuess?['user_id'] == match.userId;
-
               return Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 430),
@@ -100,13 +146,17 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                     padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
                     child: Column(
                       children: [
+                        _AutoRoundAdvancer(match: match),
                         Row(
                           children: [
                             _CircleIconButton(
                               icon: Icons.arrow_back_rounded,
                               onTap: () async {
                                 await match.leaveRoom();
-                                if (context.mounted) Navigator.pop(context);
+
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
                               },
                             ),
                             const SizedBox(width: 8),
@@ -175,6 +225,8 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                             ),
                             child: SingleChildScrollView(
                               physics: const BouncingScrollPhysics(),
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -191,6 +243,13 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                         ),
                                       ),
                                       _SmallChip(
+                                        text:
+                                            _formatPlayerStatus(player.status),
+                                        icon: _statusIcon(player.status),
+                                        color: _statusColor(player.status),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _SmallChip(
                                         text: match.revealedHintCount == 0
                                             ? 'No hints used'
                                             : '${match.revealedHintCount} hints',
@@ -202,11 +261,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  _RoundMessage(
-                                    match: match,
-                                    lockedByMe: lockedByMe,
-                                    correctGuessExists: correctGuess != null,
-                                  ),
+                                  _RoundMessage(match: match),
                                   const SizedBox(height: 14),
                                   _AutoCareerTimeline(match: match),
                                   const SizedBox(height: 14),
@@ -225,43 +280,14 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                   _RoundStatusBox(match: match),
                                   if (match.roundEnded) ...[
                                     const SizedBox(height: 12),
-                                    if (match.isHost)
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton.icon(
-                                          onPressed: match.nextRoundIfHost,
-                                          icon: const Icon(
-                                            Icons.arrow_forward_rounded,
-                                          ),
-                                          label: Text(
-                                            match.currentRound >=
-                                                    match.totalRounds
-                                                ? 'Finish Match'
-                                                : 'Next Round',
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppTheme.gold,
-                                            foregroundColor:
-                                                const Color(0xFF100A00),
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 14,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(18),
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      const Text(
-                                        'Waiting for host to start the next round...',
-                                        style: TextStyle(
-                                          color: AppTheme.subText,
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                    const Text(
+                                      'Next round will start automatically...',
+                                      style: TextStyle(
+                                        color: AppTheme.subText,
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w700,
                                       ),
+                                    ),
                                   ],
                                 ],
                               ),
@@ -281,10 +307,71 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
   }
 }
 
+class _AutoRoundAdvancer extends StatefulWidget {
+  final PrivateMatchProvider match;
+
+  const _AutoRoundAdvancer({
+    required this.match,
+  });
+
+  @override
+  State<_AutoRoundAdvancer> createState() => _AutoRoundAdvancerState();
+}
+
+class _AutoRoundAdvancerState extends State<_AutoRoundAdvancer> {
+  Timer? _timer;
+  int? _lastTriggeredRound;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _check(),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _AutoRoundAdvancer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.match.currentRound != widget.match.currentRound) {
+      _lastTriggeredRound = null;
+    }
+
+    _check();
+  }
+
+  void _check() {
+    final match = widget.match;
+
+    if (!match.isHost) return;
+    if (!match.roundEnded) return;
+    if (_lastTriggeredRound == match.currentRound) return;
+
+    _lastTriggeredRound = match.currentRound;
+    match.autoAdvanceRoundIfHost();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
+  }
+}
+
 class _AutoCareerTimeline extends StatefulWidget {
   final PrivateMatchProvider match;
 
-  const _AutoCareerTimeline({required this.match});
+  const _AutoCareerTimeline({
+    required this.match,
+  });
 
   @override
   State<_AutoCareerTimeline> createState() => _AutoCareerTimelineState();
@@ -298,6 +385,7 @@ class _AutoCareerTimelineState extends State<_AutoCareerTimeline> {
   @override
   void initState() {
     super.initState();
+
     _syncNow();
 
     _timer = Timer.periodic(
@@ -339,6 +427,15 @@ class _AutoCareerTimelineState extends State<_AutoCareerTimeline> {
     });
   }
 
+  double _timelineHeight(int totalClubs) {
+    if (totalClubs <= 2) return 170;
+    if (totalClubs <= 4) return 300;
+    if (totalClubs <= 6) return 430;
+    if (totalClubs <= 8) return 560;
+
+    return 620;
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -353,10 +450,30 @@ class _AutoCareerTimelineState extends State<_AutoCareerTimeline> {
     final safeVisibleCount = _visibleCount.clamp(1, player.clubs.length);
     final visibleClubs = player.clubs.take(safeVisibleCount).toList();
 
-    return RepaintBoundary(
-      child: CareerTimeline(
-        key: ValueKey('${player.id}_$safeVisibleCount'),
-        clubs: visibleClubs,
+    return Container(
+      height: _timelineHeight(player.clubs.length),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF02101F).withOpacity(0.25),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: AppTheme.stadiumBlue.withOpacity(0.22),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: RepaintBoundary(
+              child: CareerTimeline(
+                key: ValueKey('${player.id}_$safeVisibleCount'),
+                clubs: visibleClubs,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -365,7 +482,9 @@ class _AutoCareerTimelineState extends State<_AutoCareerTimeline> {
 class _RoundHeader extends StatelessWidget {
   final PrivateMatchProvider match;
 
-  const _RoundHeader({required this.match});
+  const _RoundHeader({
+    required this.match,
+  });
 
   String _formatTime(int? seconds) {
     if (seconds == null) return 'Unlimited';
@@ -378,7 +497,10 @@ class _RoundHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _TimerHeader(match: match, formatTime: _formatTime);
+    return _TimerHeader(
+      match: match,
+      formatTime: _formatTime,
+    );
   }
 }
 
@@ -465,13 +587,9 @@ class _TimerHeaderState extends State<_TimerHeader> {
 
 class _RoundMessage extends StatefulWidget {
   final PrivateMatchProvider match;
-  final bool lockedByMe;
-  final bool correctGuessExists;
 
   const _RoundMessage({
     required this.match,
-    required this.lockedByMe,
-    required this.correctGuessExists,
   });
 
   @override
@@ -501,21 +619,26 @@ class _RoundMessageState extends State<_RoundMessage> {
 
   @override
   Widget build(BuildContext context) {
+    final player = widget.match.currentPlayer;
+
     String message;
 
     if (widget.match.roundEnded) {
       if (widget.match.isTimeUpAt(DateTime.now())) {
-        message = 'Round ended. Time is up.';
-      } else if (widget.correctGuessExists) {
-        message = widget.lockedByMe
-            ? 'You guessed correctly first. The round is locked.'
-            : 'Your friend guessed correctly first. The round is locked.';
+        message = 'Time is up. The player was ${player?.name ?? 'the player'}.';
+      } else if (widget.match.areAllPlayersDoneForRound) {
+        message =
+            'Round finished. The player was ${player?.name ?? 'the player'}.';
       } else {
-        message = 'Round ended.';
+        message =
+            'Round ended. The player was ${player?.name ?? 'the player'}.';
       }
+    } else if (widget.match.hasCorrectGuessThisRound) {
+      message = 'You guessed correctly. Waiting for your friend to finish.';
     } else if (widget.match.myWrongAttempts >=
         PrivateMatchProvider.maxWrongAttempts) {
-      message = 'You used all 3 wrong attempts. Wait for the next round.';
+      message =
+          'You used all 3 wrong attempts. Waiting for your friend to finish.';
     } else if (widget.match.isCareerFullyRevealed) {
       message = 'Full career revealed. Correct guess now gives 1 point.';
     } else {
@@ -715,7 +838,7 @@ class _HintPanel extends StatelessWidget {
           const SizedBox(height: 10),
           if (match.didIRequestHint)
             const Text(
-              'Hint requested. Waiting for your friend to accept.',
+              'Hint requested.\nWaiting for your friend to accept.',
               style: TextStyle(
                 color: AppTheme.gold,
                 fontSize: 12,
@@ -811,22 +934,39 @@ class _RoundStatusBoxState extends State<_RoundStatusBox> {
     super.dispose();
   }
 
+  String _playerStatus(PrivateMatchPlayer player) {
+    final isMe = player.userId == widget.match.userId;
+    final name = isMe ? 'You' : player.displayName;
+
+    if (widget.match.hasCorrectGuessForUser(player.userId)) {
+      return '$name: correct';
+    }
+
+    final wrong = widget.match.wrongAttemptsForUser(player.userId);
+
+    if (wrong >= PrivateMatchProvider.maxWrongAttempts) {
+      return '$name: failed 3 attempts';
+    }
+
+    return '$name: $wrong/3 wrong attempts';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final guess = widget.match.firstCorrectGuess;
+    final match = widget.match;
+    final player = match.currentPlayer;
+
     String text;
 
-    if (widget.match.isTimeUpAt(DateTime.now())) {
-      text = 'Time is up.';
-    } else if (guess == null) {
-      text = 'No correct guess yet. First correct guess locks the round.';
+    if (match.roundEnded) {
+      if (match.isTimeUpAt(DateTime.now())) {
+        text = 'Time is up. The answer was ${player?.name ?? 'the player'}.';
+      } else {
+        text = 'Answer: ${player?.name ?? 'the player'}.';
+      }
     } else {
-      final guessedByMe = guess['user_id'] == widget.match.userId;
-      final points = guess['points']?.toString() ?? '0';
-
-      text = guessedByMe
-          ? 'You guessed correctly first and earned $points points.'
-          : 'Your friend guessed correctly first and earned $points points.';
+      final statuses = match.roomPlayers.map(_playerStatus).join('\n');
+      text = statuses.isEmpty ? 'Waiting for players...' : statuses;
     }
 
     return Container(
@@ -845,6 +985,7 @@ class _RoundStatusBoxState extends State<_RoundStatusBox> {
           color: AppTheme.text,
           fontSize: 12.5,
           fontWeight: FontWeight.w800,
+          height: 1.35,
         ),
       ),
     );
@@ -908,6 +1049,7 @@ class _WaitingRoomView extends StatelessWidget {
     if (difficulty == 'pro') return 'Pro';
     if (difficulty == 'legend') return 'Legend';
     if (difficulty == 'expert') return 'Expert';
+
     return 'Random';
   }
 
@@ -1102,6 +1244,7 @@ class _PrivateResultView extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () async {
                       await match.leaveRoom();
+
                       if (context.mounted) {
                         Navigator.popUntil(context, (route) => route.isFirst);
                       }
@@ -1143,11 +1286,16 @@ class _SmallInfoBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      padding: const EdgeInsets.symmetric(
+        vertical: 10,
+        horizontal: 10,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.10),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.28)),
+        border: Border.all(
+          color: color.withOpacity(0.28),
+        ),
       ),
       child: Column(
         children: [
@@ -1196,11 +1344,17 @@ class _ScoreCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF02101F).withOpacity(0.72),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.35)),
+          border: Border.all(
+            color: color.withOpacity(0.35),
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 20),
+            Icon(
+              icon,
+              color: color,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1251,7 +1405,9 @@ class _ResultPlayerRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.10),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(
+          color: color.withOpacity(0.35),
+        ),
       ),
       child: Row(
         children: [
@@ -1309,12 +1465,18 @@ class _SmallChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(
+          color: color.withOpacity(0.35),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 13),
+          Icon(
+            icon,
+            color: color,
+            size: 13,
+          ),
           const SizedBox(width: 4),
           Text(
             text,
@@ -1355,7 +1517,11 @@ class _CircleIconButton extends StatelessWidget {
         child: SizedBox(
           width: 42,
           height: 42,
-          child: Icon(icon, color: AppTheme.text, size: 24),
+          child: Icon(
+            icon,
+            color: AppTheme.text,
+            size: 24,
+          ),
         ),
       ),
     );

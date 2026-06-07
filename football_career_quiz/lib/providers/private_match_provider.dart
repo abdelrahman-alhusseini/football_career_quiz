@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/player_model.dart';
@@ -41,7 +42,14 @@ class PrivateMatchProvider extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
   final Random _random = Random();
 
+  static const int maxWrongAttempts = 3;
+
+  static const String _savedUserIdKey = 'career_guess_private_user_id';
+  static const String _savedNameKey = 'career_guess_private_display_name';
+  static const String _savedRoomCodeKey = 'career_guess_private_room_code';
+
   Timer? _pollTimer;
+  bool _isAutoAdvancing = false;
 
   List<PlayerModel> _allPlayers = [];
 
@@ -63,8 +71,6 @@ class PrivateMatchProvider extends ChangeNotifier {
 
   String? feedbackMessage;
   bool? lastGuessWasCorrect;
-
-  static const int maxWrongAttempts = 3;
 
   bool get hasRoom => roomCode != null && room != null;
 
@@ -126,7 +132,6 @@ class PrivateMatchProvider extends ChangeNotifier {
     if (player == null) return 0;
 
     final autoRevealed = 1 + (elapsedSecondsAt(now) ~/ GameRules.revealSeconds);
-
     return autoRevealed.clamp(1, player.clubs.length);
   }
 
@@ -135,6 +140,7 @@ class PrivateMatchProvider extends ChangeNotifier {
   bool get isCareerFullyRevealed {
     final player = currentPlayer;
     if (player == null) return false;
+
     return revealedClubCount >= player.clubs.length;
   }
 
@@ -196,12 +202,13 @@ class PrivateMatchProvider extends ChangeNotifier {
     if (currentPlayer == null) return false;
     if (roundEnded) return false;
     if (hasPendingHintRequest) return false;
+
     return revealedHintCount < currentRoundHints.length;
   }
 
   List<Map<String, dynamic>> get currentRoundGuesses {
     final list = guesses.where((guess) {
-      return guess['round_number'] == currentRound;
+      return (guess['round_number'] as num?)?.toInt() == currentRound;
     }).toList();
 
     list.sort((a, b) {
@@ -213,47 +220,86 @@ class PrivateMatchProvider extends ChangeNotifier {
     return list;
   }
 
+  List<Map<String, dynamic>> get correctGuessesThisRound {
+    return currentRoundGuesses.where((guess) {
+      return guess['is_correct'] == true;
+    }).toList();
+  }
+
   Map<String, dynamic>? get firstCorrectGuess {
     for (final guess in currentRoundGuesses) {
       if (guess['is_correct'] == true) return guess;
     }
+
     return null;
+  }
+
+  List<Map<String, dynamic>> guessesForUser(String targetUserId) {
+    return currentRoundGuesses.where((guess) {
+      return guess['user_id'] == targetUserId;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get myCurrentRoundGuesses {
+    return guessesForUser(userId);
+  }
+
+  int wrongAttemptsForUser(String targetUserId) {
+    return guessesForUser(targetUserId).where((guess) {
+      return guess['is_correct'] != true;
+    }).length;
+  }
+
+  bool hasCorrectGuessForUser(String targetUserId) {
+    return guessesForUser(targetUserId).any((guess) {
+      return guess['is_correct'] == true;
+    });
+  }
+
+  bool isPlayerDoneForRound(String targetUserId) {
+    return hasCorrectGuessForUser(targetUserId) ||
+        wrongAttemptsForUser(targetUserId) >= maxWrongAttempts;
+  }
+
+  bool get areAllPlayersDoneForRound {
+    if (roomPlayers.length < 2) return false;
+
+    return roomPlayers.every((player) {
+      return isPlayerDoneForRound(player.userId);
+    });
   }
 
   bool get roundEnded {
     if (gameFinished) return true;
     if (isTimeUp) return true;
-    return firstCorrectGuess != null;
+    return areAllPlayersDoneForRound;
   }
 
-  List<Map<String, dynamic>> get myCurrentRoundGuesses {
-    return currentRoundGuesses.where((guess) {
-      return guess['user_id'] == userId;
-    }).toList();
+  String get roundEndReason {
+    if (gameFinished) return 'finished';
+    if (isTimeUp) return 'time';
+    if (areAllPlayersDoneForRound) return 'attempts_or_correct';
+    return 'active';
   }
 
-  int get myWrongAttempts {
-    return myCurrentRoundGuesses.where((guess) {
-      return guess['is_correct'] != true;
-    }).length;
-  }
+  int get myWrongAttempts => wrongAttemptsForUser(userId);
 
   int get attemptsLeft {
     final left = maxWrongAttempts - myWrongAttempts;
     return left < 0 ? 0 : left;
   }
 
-  bool get hasCorrectGuessThisRound {
-    return myCurrentRoundGuesses.any((guess) {
-      return guess['is_correct'] == true;
-    });
-  }
+  bool get hasCorrectGuessThisRound => hasCorrectGuessForUser(userId);
+
+  bool get amIDoneForRound => isPlayerDoneForRound(userId);
 
   bool get canSubmitGuess {
     if (currentPlayer == null) return false;
-    if (roundEnded) return false;
+    if (gameFinished) return false;
+    if (isTimeUp) return false;
     if (hasCorrectGuessThisRound) return false;
     if (myWrongAttempts >= maxWrongAttempts) return false;
+
     return true;
   }
 
@@ -261,6 +307,7 @@ class PrivateMatchProvider extends ChangeNotifier {
     for (final player in roomPlayers) {
       if (player.userId == userId) return player;
     }
+
     return null;
   }
 
@@ -268,6 +315,7 @@ class PrivateMatchProvider extends ChangeNotifier {
     for (final player in roomPlayers) {
       if (player.userId != userId) return player;
     }
+
     return null;
   }
 
@@ -286,13 +334,33 @@ class PrivateMatchProvider extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    if (userId.isEmpty) {
-      userId = _getOrCreateUserId();
+    if (isLoading) return;
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      userId = prefs.getString(_savedUserIdKey) ?? _getOrCreateUserId();
+      displayName = prefs.getString(_savedNameKey) ?? '';
+
+      await prefs.setString(_savedUserIdKey, userId);
+
+      if (_allPlayers.isEmpty) {
+        _allPlayers = await PlayerRepository.loadPlayers();
+      }
+
+      final savedRoomCode = prefs.getString(_savedRoomCodeKey);
+      if (savedRoomCode != null && savedRoomCode.trim().isNotEmpty) {
+        await reconnectToSavedRoom(savedRoomCode);
+      }
+    } catch (e) {
+      errorMessage = 'Could not initialize private match: $e';
     }
 
-    if (_allPlayers.isEmpty) {
-      _allPlayers = await PlayerRepository.loadPlayers();
-    }
+    isLoading = false;
+    notifyListeners();
   }
 
   String _getOrCreateUserId() {
@@ -342,14 +410,68 @@ class PrivateMatchProvider extends ChangeNotifier {
     }).toList()
       ..shuffle(_random);
 
-    return pool.take(GameRules.totalRounds).map((p) => p.id).toList();
+    return pool.take(GameRules.totalRounds).map((player) => player.id).toList();
   }
 
   PlayerModel? _playerById(String id) {
     for (final player in _allPlayers) {
       if (player.id == id) return player;
     }
+
     return null;
+  }
+
+  Future<void> _saveSession() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(_savedUserIdKey, userId);
+
+    if (displayName.trim().isNotEmpty) {
+      await prefs.setString(_savedNameKey, displayName.trim());
+    }
+
+    final code = roomCode;
+    if (code != null && code.trim().isNotEmpty) {
+      await prefs.setString(_savedRoomCodeKey, code.trim().toUpperCase());
+    }
+  }
+
+  Future<void> _clearSavedRoomOnly() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_savedRoomCodeKey);
+  }
+
+  Future<bool> reconnectToSavedRoom(String code) async {
+    final normalizedCode = code.trim().toUpperCase();
+    if (normalizedCode.isEmpty) return false;
+
+    try {
+      if (_allPlayers.isEmpty) {
+        _allPlayers = await PlayerRepository.loadPlayers();
+      }
+
+      final existingRoom = await _supabase
+          .from('private_rooms')
+          .select()
+          .eq('room_code', normalizedCode)
+          .maybeSingle();
+
+      if (existingRoom == null) {
+        await _clearSavedRoomOnly();
+        return false;
+      }
+
+      roomCode = normalizedCode;
+      isHost = existingRoom['host_id']?.toString() == userId;
+
+      await _refreshRoom();
+      _startPolling();
+      await _saveSession();
+
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> createRoom({
@@ -357,14 +479,24 @@ class PrivateMatchProvider extends ChangeNotifier {
     required String selectedDifficulty,
     required bool unlimitedTime,
   }) async {
+    final trimmedName = name.trim();
+
+    if (trimmedName.isEmpty) {
+      errorMessage = 'Please enter your name before creating a room.';
+      notifyListeners();
+      return;
+    }
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      await init();
+      if (_allPlayers.isEmpty || userId.isEmpty) {
+        await init();
+      }
 
-      displayName = name.trim().isEmpty ? 'Host' : name.trim();
+      displayName = trimmedName;
       isHost = true;
 
       final code = _generateRoomCode();
@@ -382,6 +514,7 @@ class PrivateMatchProvider extends ChangeNotifier {
         'room_code': code,
         'status': 'waiting',
         'host_id': userId,
+        'guest_id': null,
         'current_round': 1,
         'total_rounds': GameRules.totalRounds,
         'selected_player_ids': playerIds,
@@ -403,7 +536,12 @@ class PrivateMatchProvider extends ChangeNotifier {
       });
 
       roomCode = code;
+      gameFinished = false;
+      currentRound = 1;
+      feedbackMessage = null;
+      lastGuessWasCorrect = null;
 
+      await _saveSession();
       await _refreshRoom();
       _startPolling();
     } catch (e) {
@@ -418,17 +556,31 @@ class PrivateMatchProvider extends ChangeNotifier {
     required String code,
     required String name,
   }) async {
+    final trimmedName = name.trim();
+    final normalizedCode = code.trim().toUpperCase();
+
+    if (trimmedName.isEmpty) {
+      errorMessage = 'Please enter your name before joining a room.';
+      notifyListeners();
+      return;
+    }
+
+    if (normalizedCode.isEmpty) {
+      errorMessage = 'Please enter a room code.';
+      notifyListeners();
+      return;
+    }
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      await init();
+      if (_allPlayers.isEmpty || userId.isEmpty) {
+        await init();
+      }
 
-      displayName = name.trim().isEmpty ? 'Guest' : name.trim();
-      isHost = false;
-
-      final normalizedCode = code.trim().toUpperCase();
+      displayName = trimmedName;
 
       final existingRoom = await _supabase
           .from('private_rooms')
@@ -443,6 +595,29 @@ class PrivateMatchProvider extends ChangeNotifier {
         return;
       }
 
+      final status = existingRoom['status']?.toString() ?? 'waiting';
+      if (status == 'finished') {
+        errorMessage = 'This match has already finished.';
+        isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      final hostId = existingRoom['host_id']?.toString();
+      final guestId = existingRoom['guest_id']?.toString();
+
+      isHost = hostId == userId;
+
+      if (guestId != null &&
+          guestId.isNotEmpty &&
+          guestId != userId &&
+          hostId != userId) {
+        errorMessage = 'This room already has two players.';
+        isLoading = false;
+        notifyListeners();
+        return;
+      }
+
       await _supabase.from('private_room_players').upsert({
         'room_code': normalizedCode,
         'user_id': userId,
@@ -451,14 +626,31 @@ class PrivateMatchProvider extends ChangeNotifier {
         'correct_answers': 0,
       });
 
-      await _supabase.from('private_rooms').update({
-        'guest_id': userId,
-        'status': 'active',
-        'round_started_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('room_code', normalizedCode);
+      final updateData = <String, dynamic>{};
+
+      if (hostId != userId) {
+        updateData['guest_id'] = userId;
+      }
+
+      if (status == 'waiting') {
+        updateData['status'] = 'active';
+        updateData['round_started_at'] =
+            DateTime.now().toUtc().toIso8601String();
+      }
+
+      if (updateData.isNotEmpty) {
+        await _supabase
+            .from('private_rooms')
+            .update(updateData)
+            .eq('room_code', normalizedCode);
+      }
 
       roomCode = normalizedCode;
+      gameFinished = false;
+      feedbackMessage = null;
+      lastGuessWasCorrect = null;
 
+      await _saveSession();
       await _refreshRoom();
       _startPolling();
     } catch (e) {
@@ -491,7 +683,10 @@ class PrivateMatchProvider extends ChangeNotifier {
           .eq('room_code', code)
           .maybeSingle();
 
-      if (roomData == null) return;
+      if (roomData == null) {
+        await _clearSavedRoomOnly();
+        return;
+      }
 
       final playersData = await _supabase
           .from('private_room_players')
@@ -514,38 +709,28 @@ class PrivateMatchProvider extends ChangeNotifier {
 
       final newGuesses = (guessesData as List)
           .whereType<Map<String, dynamic>>()
-          .map((e) => Map<String, dynamic>.from(e))
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
 
-      final oldRoomKey = _roomChangeKey(room);
-      final newRoomKey = _roomChangeKey(newRoom);
+      final changed = _roomChangeKey(room) != _roomChangeKey(newRoom) ||
+          _playersChangeKey(roomPlayers) != _playersChangeKey(newPlayers) ||
+          _guessesChangeKey(guesses) != _guessesChangeKey(newGuesses);
 
-      final oldPlayersKey = _playersChangeKey(roomPlayers);
-      final newPlayersKey = _playersChangeKey(newPlayers);
-
-      final oldGuessesKey = _guessesChangeKey(guesses);
-      final newGuessesKey = _guessesChangeKey(newGuesses);
-
-      final changed = oldRoomKey != newRoomKey ||
-          oldPlayersKey != newPlayersKey ||
-          oldGuessesKey != newGuessesKey;
-
-      if (!changed) {
-        return;
-      }
+      if (!changed) return;
 
       room = newRoom;
       roomPlayers = newPlayers;
       guesses = newGuesses;
 
       currentRound = (room?['current_round'] as num?)?.toInt() ?? 1;
+      isHost = room?['host_id']?.toString() == userId;
 
       _syncCurrentPlayer();
       _syncRoundState();
 
       notifyListeners();
     } catch (_) {
-      // Keep current state if one poll fails.
+      // Keep last good state if one poll fails.
     }
   }
 
@@ -555,6 +740,7 @@ class PrivateMatchProvider extends ChangeNotifier {
     return [
       value['room_code'],
       value['status'],
+      value['host_id'],
       value['guest_id'],
       value['current_round'],
       value['difficulty'],
@@ -568,33 +754,29 @@ class PrivateMatchProvider extends ChangeNotifier {
   }
 
   String _playersChangeKey(List<PrivateMatchPlayer> players) {
-    return players
-        .map(
-          (player) => [
-            player.userId,
-            player.displayName,
-            player.score,
-            player.correctAnswers,
-          ].join(':'),
-        )
-        .join('|');
+    return players.map((player) {
+      return [
+        player.userId,
+        player.displayName,
+        player.score,
+        player.correctAnswers,
+      ].join(':');
+    }).join('|');
   }
 
   String _guessesChangeKey(List<Map<String, dynamic>> items) {
-    return items
-        .map(
-          (guess) => [
-            guess['id'],
-            guess['room_code'],
-            guess['round_number'],
-            guess['user_id'],
-            guess['guess'],
-            guess['is_correct'],
-            guess['points'],
-            guess['created_at'],
-          ].join(':'),
-        )
-        .join('|');
+    return items.map((guess) {
+      return [
+        guess['id'],
+        guess['room_code'],
+        guess['round_number'],
+        guess['user_id'],
+        guess['guess'],
+        guess['is_correct'],
+        guess['points'],
+        guess['created_at'],
+      ].join(':');
+    }).join('|');
   }
 
   void _syncCurrentPlayer() {
@@ -615,6 +797,7 @@ class PrivateMatchProvider extends ChangeNotifier {
       currentPlayer = nextPlayer;
       feedbackMessage = null;
       lastGuessWasCorrect = null;
+      _isAutoAdvancing = false;
     }
   }
 
@@ -644,10 +827,8 @@ class PrivateMatchProvider extends ChangeNotifier {
     final code = roomCode;
     if (code == null || !canAcceptHint) return;
 
-    final nextHintCount = revealedHintCount + 1;
-
     await _supabase.from('private_rooms').update({
-      'revealed_hint_count': nextHintCount,
+      'revealed_hint_count': revealedHintCount + 1,
       'hint_requested_by': null,
       'hint_request_round': null,
     }).eq('room_code', code);
@@ -676,20 +857,17 @@ class PrivateMatchProvider extends ChangeNotifier {
     }
 
     if (player.position.trim().isNotEmpty) {
-      final positionHint = 'Position: ${player.position}.';
-      if (!hints.contains(positionHint)) hints.add(positionHint);
+      hints.add('Position: ${player.position}.');
     }
 
     if (player.nationality.trim().isNotEmpty) {
-      final nationalityHint = 'Nationality: ${player.nationality}.';
-      if (!hints.contains(nationalityHint)) hints.add(nationalityHint);
+      hints.add('Nationality: ${player.nationality}.');
     }
 
     if (player.knownClubNumbers.isNotEmpty) {
       for (final entry in player.knownClubNumbers.entries) {
         if (entry.key.trim().isNotEmpty && entry.value.trim().isNotEmpty) {
-          final numberHint = 'Wore number ${entry.value} for ${entry.key}.';
-          if (!hints.contains(numberHint)) hints.add(numberHint);
+          hints.add('Wore number ${entry.value} for ${entry.key}.');
         }
       }
     }
@@ -735,7 +913,6 @@ class PrivateMatchProvider extends ChangeNotifier {
     if (!canSubmitGuess) return;
 
     final guess = guessText.trim();
-
     if (guess.isEmpty) return;
 
     await _refreshRoom();
@@ -805,6 +982,7 @@ class PrivateMatchProvider extends ChangeNotifier {
         }
       } else {
         final remaining = attemptsLeft - 1;
+
         if (remaining <= 0) {
           feedbackMessage = 'Wrong. You used all 3 attempts.';
         } else {
@@ -817,6 +995,33 @@ class PrivateMatchProvider extends ChangeNotifier {
       errorMessage = 'Could not submit guess: $e';
       notifyListeners();
     }
+  }
+
+  Future<void> autoAdvanceRoundIfHost({
+    Duration revealDelay = const Duration(seconds: 5),
+  }) async {
+    if (!isHost) return;
+    if (!roundEnded) return;
+    if (_isAutoAdvancing) return;
+
+    _isAutoAdvancing = true;
+
+    final lockedRound = currentRound;
+
+    await Future.delayed(revealDelay);
+
+    if (currentRound != lockedRound) {
+      _isAutoAdvancing = false;
+      return;
+    }
+
+    if (!roundEnded) {
+      _isAutoAdvancing = false;
+      return;
+    }
+
+    await nextRoundIfHost();
+    _isAutoAdvancing = false;
   }
 
   Future<void> nextRoundIfHost() async {
@@ -849,7 +1054,19 @@ class PrivateMatchProvider extends ChangeNotifier {
   }
 
   Future<void> leaveRoom() async {
+    final code = roomCode;
+
     _pollTimer?.cancel();
+
+    if (code != null) {
+      try {
+        await _supabase.from('private_rooms').update({
+          'status': 'finished',
+        }).eq('room_code', code);
+      } catch (_) {
+        // Still clear local state even if Supabase update fails.
+      }
+    }
 
     roomCode = null;
     room = null;
@@ -861,6 +1078,10 @@ class PrivateMatchProvider extends ChangeNotifier {
     feedbackMessage = null;
     lastGuessWasCorrect = null;
     errorMessage = null;
+    isHost = false;
+    _isAutoAdvancing = false;
+
+    await _clearSavedRoomOnly();
 
     notifyListeners();
   }

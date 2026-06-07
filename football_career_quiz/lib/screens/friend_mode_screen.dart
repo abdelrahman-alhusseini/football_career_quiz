@@ -21,6 +21,17 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
 
   String _selectedDifficulty = 'random';
   bool _unlimitedTime = false;
+  String? _localError;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final provider = context.read<PrivateMatchProvider>();
+    if (provider.displayName.trim().isNotEmpty) {
+      _nameController.text = provider.displayName.trim();
+    }
+  }
 
   @override
   void dispose() {
@@ -29,7 +40,25 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
     super.dispose();
   }
 
+  bool _validateName() {
+    final name = _nameController.text.trim();
+
+    if (name.isEmpty) {
+      setState(() {
+        _localError = 'Please enter your name first.';
+      });
+      return false;
+    }
+
+    setState(() {
+      _localError = null;
+    });
+    return true;
+  }
+
   Future<void> _createRoom() async {
+    if (!_validateName()) return;
+
     final provider = context.read<PrivateMatchProvider>();
 
     await provider.createRoom(
@@ -46,14 +75,33 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
   }
 
   Future<void> _joinRoom() async {
+    if (!_validateName()) return;
+
+    final code = _roomCodeController.text.trim();
+
+    if (code.isEmpty) {
+      setState(() {
+        _localError = 'Please enter the room code.';
+      });
+      return;
+    }
+
     final provider = context.read<PrivateMatchProvider>();
 
     await provider.joinRoom(
-      code: _roomCodeController.text,
+      code: code,
       name: _nameController.text,
     );
 
     if (!mounted) return;
+
+    if (provider.roomCode != null) {
+      Navigator.pushNamed(context, PrivateMatchGameScreen.routeName);
+    }
+  }
+
+  Future<void> _rejoinSavedRoom() async {
+    final provider = context.read<PrivateMatchProvider>();
 
     if (provider.roomCode != null) {
       Navigator.pushNamed(context, PrivateMatchGameScreen.routeName);
@@ -72,6 +120,8 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
                 padding: const EdgeInsets.all(18),
                 child: Consumer<PrivateMatchProvider>(
                   builder: (context, provider, _) {
+                    final errorText = _localError ?? provider.errorMessage;
+
                     return SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Column(
@@ -101,7 +151,9 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'Create a private room or join your friend using a room code. Clubs reveal every 3 seconds. Hints require approval from the other player.',
+                            'Create a private room or join your friend using a room code.\n'
+                            'Each player has 3 attempts per round.\n'
+                            'The match ends if one player leaves.',
                             style: TextStyle(
                               color: AppTheme.subText,
                               fontSize: 13,
@@ -110,16 +162,75 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
                             ),
                           ),
                           const SizedBox(height: 22),
+                          if (provider.roomCode != null &&
+                              provider.room != null) ...[
+                            _SectionCard(
+                              title: 'Saved Match Found',
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Room: ${provider.roomCode}',
+                                    style: const TextStyle(
+                                      color: AppTheme.text,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: provider.isLoading
+                                          ? null
+                                          : _rejoinSavedRoom,
+                                      icon: const Icon(Icons.replay_rounded),
+                                      label: const Text(
+                                        'Rejoin Match',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w900),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppTheme.gold,
+                                        foregroundColor:
+                                            const Color(0xFF100A00),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
                           TextField(
                             controller: _nameController,
                             style: const TextStyle(
                               color: AppTheme.text,
                               fontWeight: FontWeight.w700,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Your name',
-                              prefixIcon: Icon(Icons.person_rounded),
+                              prefixIcon: const Icon(Icons.person_rounded),
+                              errorText: _localError != null &&
+                                      _localError!
+                                          .toLowerCase()
+                                          .contains('name')
+                                  ? _localError
+                                  : null,
                             ),
+                            onChanged: (_) {
+                              if (_localError != null) {
+                                setState(() {
+                                  _localError = null;
+                                });
+                              }
+                            },
                           ),
                           const SizedBox(height: 18),
                           _SectionCard(
@@ -187,8 +298,8 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
                                   ),
                                   subtitle: Text(
                                     _unlimitedTime
-                                        ? 'No 90-second limit. Clubs still reveal every 3 seconds.'
-                                        : 'Standard mode: 90 seconds per player.',
+                                        ? 'No 90-second limit.\nClubs still reveal every 3 seconds.'
+                                        : 'Standard mode: 90 seconds per round.',
                                     style: const TextStyle(
                                       color: AppTheme.subText,
                                       fontSize: 11.5,
@@ -237,10 +348,23 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
                               fontWeight: FontWeight.w900,
                               letterSpacing: 2,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Room code',
-                              prefixIcon: Icon(Icons.key_rounded),
+                              prefixIcon: const Icon(Icons.key_rounded),
+                              errorText: _localError != null &&
+                                      _localError!
+                                          .toLowerCase()
+                                          .contains('room code')
+                                  ? _localError
+                                  : null,
                             ),
+                            onChanged: (_) {
+                              if (_localError != null) {
+                                setState(() {
+                                  _localError = null;
+                                });
+                              }
+                            },
                           ),
                           const SizedBox(height: 14),
                           SizedBox(
@@ -271,14 +395,25 @@ class _FriendModeScreenState extends State<FriendModeScreen> {
                               ),
                             ),
                           ],
-                          if (provider.errorMessage != null) ...[
+                          if (errorText != null) ...[
                             const SizedBox(height: 18),
-                            Text(
-                              provider.errorMessage!,
-                              style: const TextStyle(
-                                color: Colors.redAccent,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.redAccent.withOpacity(0.35),
+                                ),
+                              ),
+                              child: Text(
+                                errorText,
+                                style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ],
