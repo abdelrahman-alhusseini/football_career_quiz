@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/club_model.dart';
 import '../services/badge_service.dart';
+import '../utils/app_theme.dart';
 
 class ClubRevealCard extends StatelessWidget {
   final ClubModel club;
@@ -16,72 +17,133 @@ class ClubRevealCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.18),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Opacity(
+            opacity: value.clamp(0, 1),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        constraints: const BoxConstraints(
+          minHeight: 150,
         ),
-      ),
-      child: Row(
-        children: [
-          Text(
-            '${index + 1}',
-            style: const TextStyle(
-              color: Color(0xFFFFD54F),
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+        padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: const Color(0xFF031521).withOpacity(0.58),
+          border: Border.all(
+            color: AppTheme.neonGreen.withOpacity(0.16),
           ),
-          const SizedBox(width: 14),
-          _ClubBadge(club: club),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              club.displayName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.22),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
-          ),
-        ],
+            BoxShadow(
+              color: AppTheme.neonGreen.withOpacity(0.05),
+              blurRadius: 18,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: -4,
+              left: -2,
+              child: _IndexBadge(number: index + 1),
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 8),
+                _PremiumBadgeImage(clubName: club.name),
+                const SizedBox(height: 12),
+                Text(
+                  club.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1.05,
+                      ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _ClubBadge extends StatelessWidget {
-  final ClubModel club;
+class _PremiumBadgeImage extends StatelessWidget {
+  final String clubName;
 
-  const _ClubBadge({
-    required this.club,
+  const _PremiumBadgeImage({
+    required this.clubName,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (club.badgeUrl.trim().isNotEmpty) {
-      return _BadgeImage(url: club.badgeUrl);
-    }
-
     return FutureBuilder<String?>(
-      future: BadgeService.getBadgeUrl(club.name),
+      future: BadgeService.getBadgeUrl(clubName),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _LoadingBadge();
-        }
-
         final badgeUrl = snapshot.data;
 
-        if (badgeUrl == null || badgeUrl.trim().isEmpty) {
-          return const _FallbackBadge();
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            width: 72,
+            height: 72,
+            child: Center(
+              child: SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppTheme.neonGreen.withOpacity(0.9),
+                ),
+              ),
+            ),
+          );
         }
 
-        return _BadgeImage(url: badgeUrl);
+        if (badgeUrl == null || badgeUrl.trim().isEmpty) {
+          return _FallbackBadge();
+        }
+
+        return Container(
+          width: 72,
+          height: 72,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.neonGreen.withOpacity(0.18),
+                blurRadius: 18,
+                spreadRadius: 1,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: _BadgeImage(url: badgeUrl),
+        );
       },
     );
   }
@@ -94,72 +156,65 @@ class _BadgeImage extends StatelessWidget {
     required this.url,
   });
 
-  bool get _isSvg => url.toLowerCase().contains('.svg');
+  bool get _isSvg => url.toLowerCase().trim().endsWith('.svg');
+  bool get _isNetwork => url.toLowerCase().startsWith('http');
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 58,
-      height: 58,
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: _isSvg
-          ? SvgPicture.network(
-              url,
-              fit: BoxFit.contain,
-              placeholderBuilder: (context) => const _SmallLoader(),
-            )
-          : Image.network(
-              url,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.sports_soccer,
-                  color: Color(0xFF0B3D2E),
-                  size: 32,
-                );
-              },
-            ),
-    );
-  }
-}
+    if (_isNetwork && _isSvg) {
+      return SvgPicture.network(
+        url,
+        width: 66,
+        height: 66,
+        fit: BoxFit.contain,
+        placeholderBuilder: (_) => _SmallLoader(),
+      );
+    }
 
-class _LoadingBadge extends StatelessWidget {
-  const _LoadingBadge();
+    if (_isNetwork) {
+      return Image.network(
+        url,
+        width: 66,
+        height: 66,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _FallbackBadge(),
+      );
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 58,
-      height: 58,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.25),
-        ),
-      ),
-      child: const _SmallLoader(),
+    if (_isSvg) {
+      return SvgPicture.asset(
+        url,
+        width: 66,
+        height: 66,
+        fit: BoxFit.contain,
+        placeholderBuilder: (_) => _SmallLoader(),
+      );
+    }
+
+    return Image.asset(
+      url,
+      width: 66,
+      height: 66,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => _FallbackBadge(),
     );
   }
 }
 
 class _SmallLoader extends StatelessWidget {
-  const _SmallLoader();
-
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: SizedBox(
-        width: 22,
-        height: 22,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: Color(0xFF0B3D2E),
+    return SizedBox(
+      width: 66,
+      height: 66,
+      child: Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppTheme.neonGreen.withOpacity(0.9),
+          ),
         ),
       ),
     );
@@ -167,24 +222,61 @@ class _SmallLoader extends StatelessWidget {
 }
 
 class _FallbackBadge extends StatelessWidget {
-  const _FallbackBadge();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 64,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppTheme.neonGreen.withOpacity(0.08),
+        border: Border.all(
+          color: AppTheme.neonGreen.withOpacity(0.18),
+        ),
+      ),
+      child: Icon(
+        Icons.shield_rounded,
+        color: AppTheme.neonGreen.withOpacity(0.85),
+        size: 36,
+      ),
+    );
+  }
+}
+
+class _IndexBadge extends StatelessWidget {
+  final int number;
+
+  const _IndexBadge({
+    required this.number,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 58,
-      height: 58,
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(16),
+        shape: BoxShape.circle,
+        color: AppTheme.gold.withOpacity(0.16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.25),
+          color: AppTheme.gold.withOpacity(0.36),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.gold.withOpacity(0.16),
+            blurRadius: 10,
+          ),
+        ],
       ),
-      child: const Icon(
-        Icons.sports_soccer,
-        color: Colors.white,
-        size: 32,
+      child: Text(
+        number.toString(),
+        style: const TextStyle(
+          color: AppTheme.gold,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }

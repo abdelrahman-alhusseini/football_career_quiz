@@ -212,7 +212,10 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 16),
+
+                                  // This now wraps into new lines.
                                   CareerTimeline(clubs: visibleClubs),
+
                                   const SizedBox(height: 14),
                                   TextField(
                                     controller: _controller,
@@ -359,107 +362,6 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
   }
 }
 
-class _GlowingTargetIcon extends StatelessWidget {
-  const _GlowingTargetIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 38,
-      height: 38,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppTheme.pitchGreen.withOpacity(0.10),
-        border: Border.all(
-          color: AppTheme.pitchGreen.withOpacity(0.65),
-          width: 1.4,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.pitchGreen.withOpacity(0.35),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.track_changes_rounded,
-        color: AppTheme.pitchGreen,
-        size: 27,
-      ),
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleIconButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF02101F).withOpacity(0.50),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: AppTheme.stadiumBlue.withOpacity(0.38),
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          width: 42,
-          height: 42,
-          child: Icon(
-            icon,
-            color: AppTheme.text,
-            size: 22,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String text;
-
-  const _StatusChip({
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 6,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.pitchGreen.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppTheme.pitchGreen.withOpacity(0.30),
-        ),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: AppTheme.pitchGreen,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
 class _TopInfoCard extends StatelessWidget {
   final String label;
   final String value;
@@ -477,29 +379,23 @@ class _TopInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 64,
-        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
+        height: 58,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF02101F).withOpacity(0.48),
+          color: const Color(0xFF02101F).withOpacity(0.72),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.stadiumBlue.withOpacity(0.36),
+            color: AppTheme.stadiumBlue.withOpacity(0.42),
+            width: 1.1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.16),
-              blurRadius: 14,
-              offset: const Offset(0, 8),
-            ),
-          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: valueColor.withOpacity(0.92),
-              size: 19,
+              color: valueColor,
+              size: 18,
             ),
             const SizedBox(width: 8),
             Column(
@@ -508,17 +404,18 @@ class _TopInfoCard extends StatelessWidget {
                 Text(
                   label,
                   style: const TextStyle(
-                    color: AppTheme.subText,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
+                    color: AppTheme.text,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    height: 1,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   value,
                   style: TextStyle(
                     color: valueColor,
-                    fontSize: 21,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     height: 1,
                   ),
@@ -526,6 +423,107 @@ class _TopInfoCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleIconButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF02101F).withOpacity(0.72),
+      shape: CircleBorder(
+        side: BorderSide(
+          color: AppTheme.stadiumBlue.withOpacity(0.42),
+          width: 1.1,
+        ),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 42,
+          height: 42,
+          child: Icon(
+            icon,
+            color: AppTheme.text,
+            size: 24,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowingTargetIcon extends StatelessWidget {
+  const _GlowingTargetIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppTheme.pitchGreen.withOpacity(0.14),
+        border: Border.all(
+          color: AppTheme.pitchGreen.withOpacity(0.58),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.pitchGreen.withOpacity(0.25),
+            blurRadius: 14,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.track_changes_rounded,
+        color: AppTheme.pitchGreen,
+        size: 22,
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String text;
+
+  const _StatusChip({
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 9,
+        vertical: 5,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.pitchGreen.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: AppTheme.pitchGreen.withOpacity(0.35),
+        ),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: AppTheme.pitchGreen,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
