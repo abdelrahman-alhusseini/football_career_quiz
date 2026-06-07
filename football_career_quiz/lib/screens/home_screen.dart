@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'difficulty_screen.dart';
+
 import 'coming_soon_screen.dart';
-import 'solo_game_screen.dart';
+import 'difficulty_screen.dart';
+import 'friend_mode_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   static const String routeName = '/';
@@ -47,14 +48,7 @@ class HomeScreen extends StatelessWidget {
                 heightFactor: 0.120,
                 debug: showButtonDebugBorders,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ComingSoonScreen(
-                        title: 'Play With Friends',
-                      ),
-                    ),
-                  );
+                  Navigator.pushNamed(context, FriendModeScreen.routeName);
                 },
               ),
 

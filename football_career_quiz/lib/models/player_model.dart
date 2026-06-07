@@ -10,6 +10,12 @@ class PlayerModel {
   final List<String> acceptedAnswers;
   final List<ClubModel> clubs;
 
+  final String position;
+  final String imageUrl;
+  final String nationalTeamNumber;
+  final Map<String, String> knownClubNumbers;
+  final List<String> hints;
+
   const PlayerModel({
     required this.id,
     required this.name,
@@ -19,33 +25,47 @@ class PlayerModel {
     required this.tags,
     required this.acceptedAnswers,
     required this.clubs,
+    this.position = '',
+    this.imageUrl = '',
+    this.nationalTeamNumber = '',
+    this.knownClubNumbers = const {},
+    this.hints = const [],
   });
 
   factory PlayerModel.fromJson(Map<String, dynamic> json) {
     final name = json['name']?.toString() ?? '';
 
-    final answers = (json['acceptedAnswers'] as List<dynamic>?)
+    final answers = (json['acceptedAnswers'] as List?)
             ?.map((e) => e.toString().toLowerCase().trim())
             .where((e) => e.isNotEmpty)
             .toList() ??
         [name.toLowerCase().trim()];
+
+    final clubNumbersJson = json['knownClubNumbers'];
 
     return PlayerModel(
       id: json['id']?.toString() ?? name.toLowerCase().replaceAll(' ', '_'),
       name: name,
       nationality: json['nationality']?.toString() ?? '',
       status: json['status']?.toString() ?? 'active',
-      difficulty: json['difficulty']?.toString() ?? 'medium',
-      tags:
-          (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
-              [],
+      difficulty: json['difficulty']?.toString() ?? 'pro',
+      tags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ?? [],
       acceptedAnswers: answers,
-      clubs: (json['clubs'] as List<dynamic>?)
+      clubs: (json['clubs'] as List?)
               ?.whereType<Map<String, dynamic>>()
               .map(ClubModel.fromJson)
               .where((club) => club.name.isNotEmpty)
               .toList() ??
           [],
+      position: json['position']?.toString() ?? '',
+      imageUrl: json['imageUrl']?.toString() ?? '',
+      nationalTeamNumber: json['nationalTeamNumber']?.toString() ?? '',
+      knownClubNumbers: clubNumbersJson is Map
+          ? clubNumbersJson.map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            )
+          : const {},
+      hints: (json['hints'] as List?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 
@@ -59,6 +79,12 @@ class PlayerModel {
       'tags': tags,
       'acceptedAnswers': acceptedAnswers,
       'clubs': clubs.map((club) => club.toJson()).toList(),
+      if (position.isNotEmpty) 'position': position,
+      if (imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+      if (nationalTeamNumber.isNotEmpty)
+        'nationalTeamNumber': nationalTeamNumber,
+      if (knownClubNumbers.isNotEmpty) 'knownClubNumbers': knownClubNumbers,
+      if (hints.isNotEmpty) 'hints': hints,
     };
   }
 }

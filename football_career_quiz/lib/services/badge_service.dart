@@ -10,6 +10,19 @@ class BadgeService {
 
   static final Map<String, String> _memoryCache = {};
 
+  // These must win before any fuzzy / contains matching.
+  // This fixes Inter Miami being confused with Inter Milan.
+  static const Map<String, String> _criticalBadgeOverrides = {
+    'Inter Miami':
+        'https://assets.football-logos.cc/logos/usa/1500x1500/inter-miami-cf.a66b9496.png',
+    'Inter Miami CF':
+        'https://assets.football-logos.cc/logos/usa/1500x1500/inter-miami-cf.a66b9496.png',
+    'Club Internacional de Fútbol Miami':
+        'https://assets.football-logos.cc/logos/usa/1500x1500/inter-miami-cf.a66b9496.png',
+    'Club Internacional de Futbol Miami':
+        'https://assets.football-logos.cc/logos/usa/1500x1500/inter-miami-cf.a66b9496.png',
+  };
+
   static const Map<String, String> _searchNameOverrides = {
     'Manchester United': 'Manchester United',
     'Manchester City': 'Manchester City',
@@ -27,7 +40,8 @@ class BadgeService {
     'Borussia Dortmund': 'Borussia Dortmund',
     'Atletico Madrid': 'Atletico Madrid',
     'Atlético Madrid': 'Atletico Madrid',
-    'Inter Miami': 'Inter Miami',
+    'Inter Miami': 'Inter Miami CF',
+    'Inter Miami CF': 'Inter Miami CF',
     'LA Galaxy': 'LA Galaxy',
     'Association sportive de Monaco Football Club': 'Monaco',
     'Paris Saint-Germain Football Club': 'Paris Saint-Germain',
@@ -81,14 +95,32 @@ class BadgeService {
     }
 
     text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
-
     return text;
+  }
+
+  static bool _isAmbiguousLooseMatch(String normalizedKey) {
+    const ambiguousNames = {
+      'inter',
+      'milan',
+      'city',
+      'united',
+      'real',
+      'sporting',
+      'racing',
+      'national',
+      'atlético',
+      'atletico',
+    };
+
+    return ambiguousNames.contains(normalizedKey);
   }
 
   static String? _findInMap(
     String clubName,
-    Map<String, String> source,
-  ) {
+    Map<String, String> source, {
+    bool allowLooseMatch = true,
+  }) {
+    // 1) Exact key match first.
     final exact = source[clubName];
     if (exact != null && exact.trim().isNotEmpty) {
       return exact;
@@ -96,26 +128,33 @@ class BadgeService {
 
     final normalizedClubName = _normalizeClubName(clubName);
 
+    // 2) Normalized exact match second.
     for (final entry in source.entries) {
       final normalizedKey = _normalizeClubName(entry.key);
-
       if (normalizedKey == normalizedClubName &&
           entry.value.trim().isNotEmpty) {
         return entry.value;
       }
     }
 
+    // 3) Controlled loose matching last.
+    // This avoids "Inter Miami" matching the "Inter" override.
+    if (!allowLooseMatch) return null;
+
     for (final entry in source.entries) {
       final normalizedKey = _normalizeClubName(entry.key);
 
+      if (normalizedKey.length < 6) continue;
+      if (_isAmbiguousLooseMatch(normalizedKey)) continue;
+
       if (normalizedClubName.contains(normalizedKey) &&
-          normalizedKey.length >= 4 &&
           entry.value.trim().isNotEmpty) {
         return entry.value;
       }
 
       if (normalizedKey.contains(normalizedClubName) &&
-          normalizedClubName.length >= 4 &&
+          normalizedClubName.length >= 6 &&
+          !_isAmbiguousLooseMatch(normalizedClubName) &&
           entry.value.trim().isNotEmpty) {
         return entry.value;
       }
@@ -125,14 +164,36 @@ class BadgeService {
   }
 
   static String? _findManualBadge(String clubName) {
+    // Critical overrides must be checked first.
+    final critical = _findInMap(
+      clubName,
+      _criticalBadgeOverrides,
+      allowLooseMatch: false,
+    );
+    if (critical != null) return critical;
+
     final overrideName = _searchNameOverrides[clubName];
 
     if (overrideName != null) {
-      final fromManualOverride = _findInMap(overrideName, badgeOverrides);
+      final criticalOverride = _findInMap(
+        overrideName,
+        _criticalBadgeOverrides,
+        allowLooseMatch: false,
+      );
+      if (criticalOverride != null) return criticalOverride;
+
+      final fromManualOverride = _findInMap(
+        overrideName,
+        badgeOverrides,
+        allowLooseMatch: false,
+      );
       if (fromManualOverride != null) return fromManualOverride;
 
-      final fromGeneratedOverride =
-          _findInMap(overrideName, generatedBadgeOverrides);
+      final fromGeneratedOverride = _findInMap(
+        overrideName,
+        generatedBadgeOverrides,
+        allowLooseMatch: false,
+      );
       if (fromGeneratedOverride != null) return fromGeneratedOverride;
     }
 
@@ -145,9 +206,45 @@ class BadgeService {
     return null;
   }
 
+  static Map<String, dynamic>? _pickBestApiTeam({
+    required List<dynamic> teams,
+    required String clubName,
+    required String searchName,
+  }) {
+    final normalizedClubName = _normalizeClubName(clubName);
+    final normalizedSearchName = _normalizeClubName(searchName);
+
+    final soccerTeams = teams.where((team) {
+      if (team is! Map<String, dynamic>) return false;
+      final sport = team['strSport']?.toString().toLowerCase() ?? '';
+      return sport == 'soccer';
+    }).toList();
+
+    final candidates = soccerTeams.isNotEmpty ? soccerTeams : teams;
+
+    for (final team in candidates) {
+      if (team is! Map<String, dynamic>) continue;
+
+      final teamName = team['strTeam']?.toString() ?? '';
+      final normalizedTeamName = _normalizeClubName(teamName);
+
+      if (normalizedTeamName == normalizedClubName ||
+          normalizedTeamName == normalizedSearchName) {
+        return team;
+      }
+    }
+
+    for (final team in candidates) {
+      if (team is Map<String, dynamic>) {
+        return team;
+      }
+    }
+
+    return null;
+  }
+
   static Future<String?> getBadgeUrl(String clubName) async {
     final manualBadge = _findManualBadge(clubName);
-
     if (manualBadge != null && manualBadge.trim().isNotEmpty) {
       return manualBadge;
     }
@@ -179,17 +276,13 @@ class BadgeService {
         return null;
       }
 
-      final soccerTeams = teams.where((team) {
-        if (team is! Map<String, dynamic>) return false;
+      final selectedTeam = _pickBestApiTeam(
+        teams: teams,
+        clubName: clubName,
+        searchName: searchName,
+      );
 
-        final sport = team['strSport']?.toString().toLowerCase() ?? '';
-        return sport == 'soccer';
-      }).toList();
-
-      final selectedTeam =
-          soccerTeams.isNotEmpty ? soccerTeams.first : teams.first;
-
-      if (selectedTeam is! Map<String, dynamic>) {
+      if (selectedTeam == null) {
         _memoryCache[clubName] = '';
         return null;
       }

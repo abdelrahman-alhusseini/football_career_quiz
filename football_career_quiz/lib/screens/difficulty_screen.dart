@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/game_provider.dart';
 import '../utils/app_theme.dart';
+import '../widgets/pitch_background.dart';
 import 'solo_game_screen.dart';
 
 class DifficultyScreen extends StatelessWidget {
@@ -10,221 +11,259 @@ class DifficultyScreen extends StatelessWidget {
 
   const DifficultyScreen({super.key});
 
-  // Turn this true only if you want to see the clickable areas.
-  static const bool showButtonDebugBorders = false;
-
-  void _selectDifficulty(BuildContext context, String difficulty) {
-    context.read<GameProvider>().setDifficulty(difficulty);
-
-    Navigator.pushNamed(
-      context,
-      SoloGameScreen.routeName,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final height = constraints.maxHeight;
-
-          return SizedBox(
-            width: width,
-            height: height,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Full-screen AI generated difficulty image
-                Image.asset(
-                  'assets/images/difficulty_menu_bg.png',
-                  width: width,
-                  height: height,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.black,
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'difficulty_menu_bg.png not found',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+      body: PitchBackground(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        _CircleBackButton(
+                          onTap: () => Navigator.pop(context),
                         ),
-                      ),
-                    );
-                  },
-                ),
-
-                // Cool visible back button
-                SafeArea(
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 14, top: 10),
-                      child: _CoolBackButton(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Choose Mode',
+                            style: TextStyle(
+                              color: AppTheme.text,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Pick your challenge. Random includes all players from every category.',
+                      style: TextStyle(
+                        color: AppTheme.subText,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 22),
+                    Expanded(
+                      child: ListView(
+                        physics: const BouncingScrollPhysics(),
+                        children: const [
+                          _DifficultyCard(
+                            title: 'Amateur',
+                            value: 'amateur',
+                            icon: Icons.sports_soccer_rounded,
+                            description:
+                                'Very famous players most casual football fans know.',
+                            examples: 'Messi, Ronaldo, Neymar, Salah, Haaland',
+                          ),
+                          SizedBox(height: 12),
+                          _DifficultyCard(
+                            title: 'Pro',
+                            value: 'pro',
+                            icon: Icons.local_fire_department_rounded,
+                            description:
+                                'Known players for regular football fans.',
+                            examples:
+                                'Sterling, Dybala, João Félix, Brahim Díaz',
+                          ),
+                          SizedBox(height: 12),
+                          _DifficultyCard(
+                            title: 'Legend',
+                            value: 'legend',
+                            icon: Icons.military_tech_rounded,
+                            description:
+                                'Older stars, retired icons, and harder famous careers.',
+                            examples:
+                                'Legends, cult heroes, tricky transfer paths',
+                          ),
+                          SizedBox(height: 12),
+                          _DifficultyCard(
+                            title: 'Expert',
+                            value: 'expert',
+                            icon: Icons.psychology_rounded,
+                            description:
+                                'Very hard players, journeymen, loans, and deep-ball knowledge.',
+                            examples:
+                                'Mid-table players, reserves, obscure paths',
+                          ),
+                          SizedBox(height: 12),
+                          _DifficultyCard(
+                            title: 'Random',
+                            value: 'random',
+                            icon: Icons.shuffle_rounded,
+                            description:
+                                'Anything can appear. Uses all 3000 players when the database is complete.',
+                            examples: 'All categories mixed together',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-
-                // AMATEUR
-                _InvisibleButton(
-                  topFactor: 0.337,
-                  leftFactor: 0.105,
-                  widthFactor: 0.790,
-                  heightFactor: 0.100,
-                  debug: showButtonDebugBorders,
-                  onTap: () {
-                    _selectDifficulty(context, 'amateur');
-                  },
-                ),
-
-                // PRO
-                _InvisibleButton(
-                  topFactor: 0.463,
-                  leftFactor: 0.105,
-                  widthFactor: 0.790,
-                  heightFactor: 0.100,
-                  debug: showButtonDebugBorders,
-                  onTap: () {
-                    _selectDifficulty(context, 'pro');
-                  },
-                ),
-
-                // ELITE
-                _InvisibleButton(
-                  topFactor: 0.590,
-                  leftFactor: 0.105,
-                  widthFactor: 0.790,
-                  heightFactor: 0.100,
-                  debug: showButtonDebugBorders,
-                  onTap: () {
-                    _selectDifficulty(context, 'elite');
-                  },
-                ),
-
-                // EXCEPTIONAL
-                _InvisibleButton(
-                  topFactor: 0.717,
-                  leftFactor: 0.105,
-                  widthFactor: 0.790,
-                  heightFactor: 0.100,
-                  debug: showButtonDebugBorders,
-                  onTap: () {
-                    _selectDifficulty(context, 'exceptional');
-                  },
-                ),
-
-                // RANDOM
-                _InvisibleButton(
-                  topFactor: 0.844,
-                  leftFactor: 0.105,
-                  widthFactor: 0.790,
-                  heightFactor: 0.095,
-                  debug: showButtonDebugBorders,
-                  onTap: () {
-                    _selectDifficulty(context, 'all');
-                  },
-                ),
-              ],
+              ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 }
 
-class _CoolBackButton extends StatelessWidget {
+class _DifficultyCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final String description;
+  final String examples;
+
+  const _DifficultyCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.description,
+    required this.examples,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF02101F).withOpacity(0.70),
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: () {
+          context.read<GameProvider>().setDifficulty(value);
+          Navigator.pushNamed(context, SoloGameScreen.routeName);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: value == 'random'
+                  ? AppTheme.gold.withOpacity(0.42)
+                  : AppTheme.stadiumBlue.withOpacity(0.35),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.18),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: value == 'random'
+                      ? AppTheme.gold.withOpacity(0.14)
+                      : AppTheme.pitchGreen.withOpacity(0.12),
+                  border: Border.all(
+                    color: value == 'random'
+                        ? AppTheme.gold.withOpacity(0.50)
+                        : AppTheme.pitchGreen.withOpacity(0.38),
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  color:
+                      value == 'random' ? AppTheme.gold : AppTheme.pitchGreen,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: AppTheme.text,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: AppTheme.subText,
+                        fontSize: 12.2,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      examples,
+                      style: TextStyle(
+                        color:
+                            value == 'random' ? AppTheme.gold : AppTheme.accent,
+                        fontSize: 11.2,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppTheme.text,
+                size: 17,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleBackButton extends StatelessWidget {
   final VoidCallback onTap;
 
-  const _CoolBackButton({
+  const _CircleBackButton({
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF02101F).withOpacity(0.65),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+      color: const Color(0xFF02101F).withOpacity(0.72),
+      shape: CircleBorder(
         side: BorderSide(
-          color: AppTheme.stadiumBlue.withOpacity(0.70),
-          width: 1.2,
+          color: AppTheme.stadiumBlue.withOpacity(0.42),
+          width: 1.1,
         ),
       ),
       child: InkWell(
+        customBorder: const CircleBorder(),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        splashColor: AppTheme.pitchGreen.withOpacity(0.18),
-        highlightColor: AppTheme.pitchGreen.withOpacity(0.08),
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.stadiumBlue.withOpacity(0.22),
-                blurRadius: 12,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          child: const Icon(
+        child: const SizedBox(
+          width: 42,
+          height: 42,
+          child: Icon(
             Icons.arrow_back_rounded,
-            color: Colors.white,
-            size: 27,
+            color: AppTheme.text,
+            size: 24,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _InvisibleButton extends StatelessWidget {
-  final double topFactor;
-  final double leftFactor;
-  final double widthFactor;
-  final double heightFactor;
-  final VoidCallback onTap;
-  final bool debug;
-
-  const _InvisibleButton({
-    required this.topFactor,
-    required this.leftFactor,
-    required this.widthFactor,
-    required this.heightFactor,
-    required this.onTap,
-    required this.debug,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    return Positioned(
-      top: size.height * topFactor,
-      left: size.width * leftFactor,
-      width: size.width * widthFactor,
-      height: size.height * heightFactor,
-      child: Material(
-        color: debug ? Colors.red.withOpacity(0.25) : Colors.transparent,
-        borderRadius: BorderRadius.circular(32),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(32),
-          splashColor: Colors.white.withOpacity(0.08),
-          highlightColor: Colors.white.withOpacity(0.04),
-          child: const SizedBox.expand(),
         ),
       ),
     );

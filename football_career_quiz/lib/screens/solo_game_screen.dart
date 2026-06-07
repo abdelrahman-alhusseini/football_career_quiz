@@ -50,6 +50,10 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                 );
               }
 
+              if (game.gameFinished) {
+                return _FinalResultView(game: game);
+              }
+
               if (player == null) {
                 return const Center(
                   child: Text(
@@ -119,7 +123,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                           children: [
                             _TopInfoCard(
                               label: 'Score',
-                              value: '${game.score}',
+                              value: game.formattedScore,
                               valueColor: AppTheme.gold,
                               icon: Icons.emoji_events_rounded,
                             ),
@@ -198,25 +202,18 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    roundEnded
-                                        ? 'Answer: ${player.name}'
-                                        : game.isCareerFullyRevealed
-                                            ? 'Full career revealed. Correct guess now gives 1 point.'
-                                            : 'A new club appears every ${GameRules.revealSeconds} seconds.',
-                                    style: const TextStyle(
-                                      fontSize: 12.2,
-                                      color: AppTheme.subText,
-                                      fontWeight: FontWeight.w500,
-                                      height: 1.35,
-                                    ),
+                                  _RoundInfoBlock(
+                                    game: game,
+                                    playerName: player.name,
+                                    roundEnded: roundEnded,
                                   ),
                                   const SizedBox(height: 16),
-
-                                  // This now wraps into new lines.
                                   CareerTimeline(clubs: visibleClubs),
-
                                   const SizedBox(height: 14),
+                                  if (!roundEnded && game.hintsEnabled) ...[
+                                    _HintBox(game: game),
+                                    const SizedBox(height: 14),
+                                  ],
                                   TextField(
                                     controller: _controller,
                                     enabled: !roundEnded,
@@ -234,9 +231,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                         onPressed: roundEnded
                                             ? null
                                             : () => _submitGuess(game),
-                                        icon: const Icon(
-                                          Icons.send_rounded,
-                                        ),
+                                        icon: const Icon(Icons.send_rounded),
                                       ),
                                       contentPadding:
                                           const EdgeInsets.symmetric(
@@ -302,7 +297,12 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                             ),
                                           ),
                                           child: Text(
-                                            roundEnded ? 'Next Round' : 'Skip',
+                                            roundEnded
+                                                ? game.currentRound >=
+                                                        GameRules.totalRounds
+                                                    ? 'See Results'
+                                                    : 'Next Round'
+                                                : 'Skip',
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w800,
                                               fontSize: 13,
@@ -362,6 +362,613 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
   }
 }
 
+class _RoundInfoBlock extends StatelessWidget {
+  final GameProvider game;
+  final String playerName;
+  final bool roundEnded;
+
+  const _RoundInfoBlock({
+    required this.game,
+    required this.playerName,
+    required this.roundEnded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final retired = game.isCurrentPlayerRetired;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          roundEnded
+              ? 'Answer: $playerName'
+              : game.isCareerFullyRevealed
+                  ? 'Full career revealed.\nCorrect guess now gives 1 point.'
+                  : 'A new club appears every ${GameRules.revealSeconds} seconds.',
+          style: const TextStyle(
+            fontSize: 12.2,
+            color: AppTheme.subText,
+            fontWeight: FontWeight.w500,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: retired
+                ? AppTheme.gold.withOpacity(0.12)
+                : AppTheme.pitchGreen.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: retired
+                  ? AppTheme.gold.withOpacity(0.35)
+                  : AppTheme.pitchGreen.withOpacity(0.35),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                retired ? Icons.history_rounded : Icons.flash_on_rounded,
+                color: retired ? AppTheme.gold : AppTheme.pitchGreen,
+                size: 15,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                game.currentPlayerStatusText,
+                style: TextStyle(
+                  color: retired ? AppTheme.gold : AppTheme.pitchGreen,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HintBox extends StatelessWidget {
+  final GameProvider game;
+
+  const _HintBox({
+    required this.game,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hintsUsed = game.usedHints;
+
+    String penaltyText;
+    if (hintsUsed == 0) {
+      penaltyText = 'No hints used — normal points available';
+    } else if (hintsUsed >= 3) {
+      penaltyText = 'Hints used: $hintsUsed — correct answer gives 0 points';
+    } else {
+      penaltyText = 'Hints used: $hintsUsed — correct answer gives 0.5 point';
+    }
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: game.canUseHint ? game.useHint : null,
+                icon: const Icon(Icons.lightbulb_rounded, size: 18),
+                label: Text(
+                  hintsUsed == 0 ? 'Use Hint' : 'Use Another Hint',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.gold,
+                  disabledForegroundColor: AppTheme.subText,
+                  side: BorderSide(
+                    color: AppTheme.gold.withOpacity(0.42),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (game.revealedHints.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.gold.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: AppTheme.gold.withOpacity(0.35),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  penaltyText,
+                  style: const TextStyle(
+                    color: AppTheme.gold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...game.revealedHints.asMap().entries.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: Text(
+                          'Hint ${entry.key + 1}: ${entry.value}',
+                          style: const TextStyle(
+                            color: AppTheme.gold,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FinalResultView extends StatelessWidget {
+  final GameProvider game;
+
+  const _FinalResultView({
+    required this.game,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final missedRounds = game.missedRounds;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 430),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _CircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Image.asset(
+                      'assets/images/career_guess_logo.png',
+                      height: 68,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Text(
+                          'Career Guess',
+                          style: TextStyle(
+                            color: AppTheme.text,
+                            fontSize: 25,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 52),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF02101F).withOpacity(0.72),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: AppTheme.gold.withOpacity(0.45),
+                            width: 1.3,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.emoji_events_rounded,
+                              color: AppTheme.gold,
+                              size: 52,
+                            ),
+                            const SizedBox(height: 14),
+                            const Text(
+                              'Final Results',
+                              style: TextStyle(
+                                color: AppTheme.text,
+                                fontSize: 27,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Rank: ${game.finalRank}',
+                              style: const TextStyle(
+                                color: AppTheme.gold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                _ResultStatCard(
+                                  label: 'Score',
+                                  value:
+                                      '${game.formattedScore}/${game.formattedMaxScore}',
+                                  icon: Icons.stars_rounded,
+                                  color: AppTheme.gold,
+                                ),
+                                const SizedBox(width: 10),
+                                _ResultStatCard(
+                                  label: 'Accuracy',
+                                  value: '${game.finalAccuracyPercent}%',
+                                  icon: Icons.track_changes_rounded,
+                                  color: AppTheme.pitchGreen,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                _ResultStatCard(
+                                  label: 'Correct',
+                                  value: '${game.correctAnswers}',
+                                  icon: Icons.check_circle_rounded,
+                                  color: AppTheme.pitchGreen,
+                                ),
+                                const SizedBox(width: 10),
+                                _ResultStatCard(
+                                  label: 'Skipped',
+                                  value: '${game.skippedRounds}',
+                                  icon: Icons.skip_next_rounded,
+                                  color: AppTheme.accent,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _MissedPlayersPanel(missedRounds: missedRounds),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.read<GameProvider>().startNewGame();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.pitchGreen,
+                            foregroundColor: const Color(0xFF02100A),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Text(
+                            'Play Again',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.text,
+                            side: BorderSide(
+                              color: AppTheme.stadiumBlue.withOpacity(0.42),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Text(
+                            'Back Home',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MissedPlayersPanel extends StatelessWidget {
+  final List<RoundReview> missedRounds;
+
+  const _MissedPlayersPanel({
+    required this.missedRounds,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF02101F).withOpacity(0.62),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: missedRounds.isEmpty
+              ? AppTheme.pitchGreen.withOpacity(0.35)
+              : Colors.red.withOpacity(0.28),
+        ),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: missedRounds.isNotEmpty,
+        iconColor: AppTheme.text,
+        collapsedIconColor: AppTheme.text,
+        title: Text(
+          missedRounds.isEmpty
+              ? 'No missed players'
+              : 'Players you missed (${missedRounds.length})',
+          style: const TextStyle(
+            color: AppTheme.text,
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        subtitle: Text(
+          missedRounds.isEmpty
+              ? 'Perfect — you knew every player.'
+              : 'Open this to review the names and careers.',
+          style: const TextStyle(
+            color: AppTheme.subText,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        children: [
+          if (missedRounds.isEmpty)
+            const Text(
+              'Great job. You did not skip any player.',
+              style: TextStyle(
+                color: AppTheme.pitchGreen,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            )
+          else
+            ...missedRounds.asMap().entries.map(
+                  (entry) => _MissedPlayerCard(
+                    index: entry.key + 1,
+                    review: entry.value,
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MissedPlayerCard extends StatelessWidget {
+  final int index;
+  final RoundReview review;
+
+  const _MissedPlayerCard({
+    required this.index,
+    required this.review,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clubPath = review.clubNames.join(' → ');
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.045),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$index. ${review.playerName}',
+            style: const TextStyle(
+              color: AppTheme.text,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              _SmallReviewChip(
+                text: review.statusLabel,
+                icon: review.statusLabel == 'Retired player'
+                    ? Icons.history_rounded
+                    : Icons.flash_on_rounded,
+              ),
+              _SmallReviewChip(
+                text: review.nationality.isEmpty
+                    ? 'Nationality unknown'
+                    : review.nationality,
+                icon: Icons.flag_rounded,
+              ),
+              _SmallReviewChip(
+                text: GameProvider.difficultyLabel(review.difficulty),
+                icon: Icons.speed_rounded,
+              ),
+              _SmallReviewChip(
+                text: review.wasSkipped ? 'Skipped' : 'Missed',
+                icon: Icons.close_rounded,
+              ),
+              if (review.hintsUsed > 0)
+                _SmallReviewChip(
+                  text: '${review.hintsUsed} hints used',
+                  icon: Icons.lightbulb_rounded,
+                ),
+            ],
+          ),
+          if (clubPath.isNotEmpty) ...[
+            const SizedBox(height: 9),
+            Text(
+              clubPath,
+              style: const TextStyle(
+                color: AppTheme.subText,
+                fontSize: 11.8,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallReviewChip extends StatelessWidget {
+  final String text;
+  final IconData icon;
+
+  const _SmallReviewChip({
+    required this.text,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppTheme.stadiumBlue.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: AppTheme.stadiumBlue.withOpacity(0.22),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppTheme.accent, size: 13),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: AppTheme.text,
+              fontSize: 10.8,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _ResultStatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        height: 78,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.045),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.28)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 19,
+                fontWeight: FontWeight.w900,
+                height: 1,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.subText,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TopInfoCard extends StatelessWidget {
   final String label;
   final String value;
@@ -371,8 +978,8 @@ class _TopInfoCard extends StatelessWidget {
   const _TopInfoCard({
     required this.label,
     required this.value,
-    required this.valueColor,
     required this.icon,
+    required this.valueColor,
   });
 
   @override
@@ -392,11 +999,7 @@ class _TopInfoCard extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: valueColor,
-              size: 18,
-            ),
+            Icon(icon, color: valueColor, size: 18),
             const SizedBox(width: 8),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -454,11 +1057,7 @@ class _CircleIconButton extends StatelessWidget {
         child: SizedBox(
           width: 42,
           height: 42,
-          child: Icon(
-            icon,
-            color: AppTheme.text,
-            size: 24,
-          ),
+          child: Icon(icon, color: AppTheme.text, size: 24),
         ),
       ),
     );
@@ -480,13 +1079,6 @@ class _GlowingTargetIcon extends StatelessWidget {
           color: AppTheme.pitchGreen.withOpacity(0.58),
           width: 1.2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.pitchGreen.withOpacity(0.25),
-            blurRadius: 14,
-            spreadRadius: 1,
-          ),
-        ],
       ),
       child: const Icon(
         Icons.track_changes_rounded,
@@ -507,10 +1099,7 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: AppTheme.pitchGreen.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
