@@ -97,6 +97,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: PitchBackground(
         child: SafeArea(
           child: Consumer<PrivateMatchProvider>(
@@ -143,7 +144,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 430),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
                     child: Column(
                       children: [
                         _AutoRoundAdvancer(match: match),
@@ -210,7 +211,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                         ),
                         const SizedBox(height: 10),
                         _RoundHeader(match: match),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         Expanded(
                           child: Container(
                             width: double.infinity,
@@ -262,21 +263,19 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   _RoundMessage(match: match),
-                                  const SizedBox(height: 14),
-                                  _AutoCareerTimeline(match: match),
+                                  if (match.roundEnded) ...[
+                                    const SizedBox(height: 12),
+                                    _AnswerRevealBox(match: match),
+                                  ],
                                   const SizedBox(height: 14),
                                   _HintPanel(match: match),
                                   const SizedBox(height: 14),
-                                  _GuessInput(
-                                    match: match,
-                                    controller: _guessController,
-                                    onSubmit: () => _submitGuess(match),
-                                  ),
-                                  if (match.feedbackMessage != null) ...[
-                                    const SizedBox(height: 14),
-                                    _FeedbackBox(match: match),
-                                  ],
+                                  _AutoCareerTimeline(match: match),
                                   const SizedBox(height: 14),
+                                  if (match.feedbackMessage != null) ...[
+                                    _FeedbackBox(match: match),
+                                    const SizedBox(height: 14),
+                                  ],
                                   _RoundStatusBox(match: match),
                                   if (match.roundEnded) ...[
                                     const SizedBox(height: 12),
@@ -293,6 +292,12 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                               ),
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 10),
+                        _AnswerSearchInput(
+                          match: match,
+                          controller: _guessController,
+                          onSubmit: () => _submitGuess(match),
                         ),
                       ],
                     ),
@@ -327,7 +332,7 @@ class _AutoRoundAdvancerState extends State<_AutoRoundAdvancer> {
     super.initState();
 
     _timer = Timer.periodic(
-      const Duration(seconds: 1),
+      const Duration(milliseconds: 500),
       (_) => _check(),
     );
   }
@@ -427,15 +432,6 @@ class _AutoCareerTimelineState extends State<_AutoCareerTimeline> {
     });
   }
 
-  double _timelineHeight(int totalClubs) {
-    if (totalClubs <= 2) return 170;
-    if (totalClubs <= 4) return 300;
-    if (totalClubs <= 6) return 430;
-    if (totalClubs <= 8) return 560;
-
-    return 620;
-  }
-
   @override
   void dispose() {
     _timer?.cancel();
@@ -450,30 +446,92 @@ class _AutoCareerTimelineState extends State<_AutoCareerTimeline> {
     final safeVisibleCount = _visibleCount.clamp(1, player.clubs.length);
     final visibleClubs = player.clubs.take(safeVisibleCount).toList();
 
+    return RepaintBoundary(
+      child: CareerTimeline(
+        key: ValueKey('${player.id}_$safeVisibleCount'),
+        clubs: visibleClubs,
+      ),
+    );
+  }
+}
+
+class _AnswerRevealBox extends StatelessWidget {
+  final PrivateMatchProvider match;
+
+  const _AnswerRevealBox({
+    required this.match,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final player = match.currentPlayer;
+    final name = player?.name ?? 'the player';
+
+    String title = 'Correct Answer';
+
+    if (match.roundEndReason == 'time') {
+      title = 'Time is Up';
+    } else if (match.roundEndReason == 'attempts_or_correct') {
+      title = 'Round Finished';
+    }
+
     return Container(
-      height: _timelineHeight(player.clubs.length),
       width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF02101F).withOpacity(0.25),
+        color: AppTheme.gold.withOpacity(0.13),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppTheme.stadiumBlue.withOpacity(0.22),
+          color: AppTheme.gold.withOpacity(0.45),
+          width: 1.2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.gold.withOpacity(0.10),
+            blurRadius: 18,
+            spreadRadius: 1,
+          ),
+        ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: RepaintBoundary(
-              child: CareerTimeline(
-                key: ValueKey('${player.id}_$safeVisibleCount'),
-                clubs: visibleClubs,
-              ),
+      child: Column(
+        children: [
+          Icon(
+            match.roundEndReason == 'correct'
+                ? Icons.check_circle_rounded
+                : Icons.info_rounded,
+            color: AppTheme.gold,
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppTheme.gold,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
             ),
           ),
-        ),
+          const SizedBox(height: 4),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppTheme.text,
+              fontSize: 23,
+              fontWeight: FontWeight.w900,
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Next round starting...',
+            style: TextStyle(
+              color: AppTheme.subText,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -624,7 +682,10 @@ class _RoundMessageState extends State<_RoundMessage> {
     String message;
 
     if (widget.match.roundEnded) {
-      if (widget.match.isTimeUpAt(DateTime.now())) {
+      if (widget.match.roundEndReason == 'correct') {
+        message =
+            'Someone guessed correctly. The player was ${player?.name ?? 'the player'}.';
+      } else if (widget.match.isTimeUpAt(DateTime.now())) {
         message = 'Time is up. The player was ${player?.name ?? 'the player'}.';
       } else if (widget.match.areAllPlayersDoneForRound) {
         message =
@@ -634,7 +695,7 @@ class _RoundMessageState extends State<_RoundMessage> {
             'Round ended. The player was ${player?.name ?? 'the player'}.';
       }
     } else if (widget.match.hasCorrectGuessThisRound) {
-      message = 'You guessed correctly. Waiting for your friend to finish.';
+      message = 'You guessed correctly. Waiting for the next round.';
     } else if (widget.match.myWrongAttempts >=
         PrivateMatchProvider.maxWrongAttempts) {
       message =
@@ -657,114 +718,313 @@ class _RoundMessageState extends State<_RoundMessage> {
   }
 }
 
-class _GuessInput extends StatefulWidget {
+class _AnswerSearchInput extends StatefulWidget {
   final PrivateMatchProvider match;
   final TextEditingController controller;
   final VoidCallback onSubmit;
 
-  const _GuessInput({
+  const _AnswerSearchInput({
     required this.match,
     required this.controller,
     required this.onSubmit,
   });
 
   @override
-  State<_GuessInput> createState() => _GuessInputState();
+  State<_AnswerSearchInput> createState() => _AnswerSearchInputState();
 }
 
-class _GuessInputState extends State<_GuessInput> {
-  Timer? _timer;
+class _AnswerSearchInputState extends State<_AnswerSearchInput> {
+  final FocusNode _focusNode = FocusNode();
+
+  List<String> _suggestions = [];
+  bool _isSelectingSuggestion = false;
 
   @override
   void initState() {
     super.initState();
 
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (mounted) setState(() {});
-      },
-    );
+    widget.controller.addListener(_updateSuggestions);
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnswerSearchInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_updateSuggestions);
+      widget.controller.addListener(_updateSuggestions);
+    }
+
+    if (oldWidget.match.currentRound != widget.match.currentRound) {
+      _clearSuggestions();
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    widget.controller.removeListener(_updateSuggestions);
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (_isSelectingSuggestion) return;
+    _updateSuggestions();
+  }
+
+  void _clearSuggestions() {
+    if (!mounted) return;
+    if (_suggestions.isEmpty) return;
+
+    setState(() {
+      _suggestions = [];
+    });
+  }
+
+  void _updateSuggestions() {
+    if (!mounted) return;
+    if (_isSelectingSuggestion) return;
+
+    if (!_focusNode.hasFocus || !widget.match.canSubmitGuess) {
+      _clearSuggestions();
+      return;
+    }
+
+    final query = widget.controller.text.trim();
+
+    if (query.length < 2) {
+      _clearSuggestions();
+      return;
+    }
+
+    final next = widget.match.searchAnswerSuggestions(
+      query,
+      limit: 7,
+    );
+
+    if (_sameList(_suggestions, next)) return;
+
+    setState(() {
+      _suggestions = next;
+    });
+  }
+
+  bool _sameList(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+
+    return true;
+  }
+
+  void _selectSuggestionImmediately(String value) {
+    if (!widget.match.canSubmitGuess) return;
+    if (_isSelectingSuggestion) return;
+
+    _isSelectingSuggestion = true;
+
+    widget.controller.text = value;
+    widget.controller.selection = TextSelection.collapsed(
+      offset: value.length,
+    );
+
+    if (mounted) {
+      setState(() {
+        _suggestions = [];
+      });
+    }
+
+    FocusScope.of(context).unfocus();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      widget.onSubmit();
+
+      _isSelectingSuggestion = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final canSubmit = widget.match.canSubmitGuess;
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _SmallInfoBox(
-                label: 'Wrong Attempts',
-                value:
-                    '${widget.match.myWrongAttempts}/${PrivateMatchProvider.maxWrongAttempts}',
-                color: widget.match.attemptsLeft <= 1
-                    ? Colors.redAccent
-                    : AppTheme.gold,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _SmallInfoBox(
-                label: 'Attempts Left',
-                value: '${widget.match.attemptsLeft}',
-                color: widget.match.attemptsLeft <= 1
-                    ? Colors.redAccent
-                    : AppTheme.pitchGreen,
-              ),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF02101F).withOpacity(0.88),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: canSubmit
+              ? AppTheme.pitchGreen.withOpacity(0.55)
+              : AppTheme.border.withOpacity(0.8),
+          width: 1.2,
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: widget.controller,
-          enabled: canSubmit,
-          onSubmitted: (_) => widget.onSubmit(),
-          style: const TextStyle(
-            color: AppTheme.text,
-            fontWeight: FontWeight.w700,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.22),
+            blurRadius: 18,
+            offset: const Offset(0, -6),
           ),
-          decoration: InputDecoration(
-            hintText: canSubmit
-                ? 'Type player name...'
-                : 'You can no longer guess...',
-            prefixIcon: const Icon(Icons.search_rounded),
-            suffixIcon: IconButton(
-              onPressed: canSubmit ? widget.onSubmit : null,
-              icon: const Icon(Icons.send_rounded),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: canSubmit ? widget.onSubmit : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.pitchGreen,
-              foregroundColor: const Color(0xFF02100A),
-              disabledBackgroundColor: AppTheme.border,
-              disabledForegroundColor: AppTheme.subText,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_suggestions.isNotEmpty) ...[
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxHeight: 190),
+              decoration: BoxDecoration(
+                color: const Color(0xFF061B30).withOpacity(0.98),
                 borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppTheme.stadiumBlue.withOpacity(0.38),
+                ),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                itemCount: _suggestions.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  color: AppTheme.stadiumBlue.withOpacity(0.18),
+                ),
+                itemBuilder: (context, index) {
+                  final suggestion = _suggestions[index];
+
+                  return Material(
+                    color: Colors.transparent,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) {
+                        _selectSuggestionImmediately(suggestion);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 13,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.search_rounded,
+                              color: AppTheme.gold,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                suggestion,
+                                style: const TextStyle(
+                                  color: AppTheme.text,
+                                  fontSize: 13.2,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.touch_app_rounded,
+                              color: AppTheme.subText,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            child: const Text(
-              'Submit Guess',
-              style: TextStyle(fontWeight: FontWeight.w900),
-            ),
+            const SizedBox(height: 8),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  enabled: canSubmit,
+                  onSubmitted: (_) => widget.onSubmit(),
+                  style: const TextStyle(
+                    color: AppTheme.text,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: canSubmit
+                        ? 'Search player name...'
+                        : widget.match.roundEnded
+                            ? 'Round ended...'
+                            : 'You can no longer guess...',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: widget.controller.text.trim().isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: !canSubmit
+                                ? null
+                                : () {
+                                    widget.controller.clear();
+                                    _updateSuggestions();
+                                  },
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 54,
+                width: 54,
+                child: ElevatedButton(
+                  onPressed: canSubmit ? widget.onSubmit : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.pitchGreen,
+                    foregroundColor: const Color(0xFF02100A),
+                    disabledBackgroundColor: AppTheme.border,
+                    disabledForegroundColor: AppTheme.subText,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: const Icon(Icons.send_rounded),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _SmallInfoBox(
+                  label: 'Wrong',
+                  value:
+                      '${widget.match.myWrongAttempts}/${PrivateMatchProvider.maxWrongAttempts}',
+                  color: widget.match.attemptsLeft <= 1
+                      ? Colors.redAccent
+                      : AppTheme.gold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SmallInfoBox(
+                  label: 'Left',
+                  value: '${widget.match.attemptsLeft}',
+                  color: widget.match.attemptsLeft <= 1
+                      ? Colors.redAccent
+                      : AppTheme.pitchGreen,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -959,7 +1219,9 @@ class _RoundStatusBoxState extends State<_RoundStatusBox> {
     String text;
 
     if (match.roundEnded) {
-      if (match.isTimeUpAt(DateTime.now())) {
+      if (match.roundEndReason == 'correct') {
+        text = 'Correct answer: ${player?.name ?? 'the player'}.';
+      } else if (match.isTimeUpAt(DateTime.now())) {
         text = 'Time is up. The answer was ${player?.name ?? 'the player'}.';
       } else {
         text = 'Answer: ${player?.name ?? 'the player'}.';
@@ -1287,7 +1549,7 @@ class _SmallInfoBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        vertical: 10,
+        vertical: 8,
         horizontal: 10,
       ),
       decoration: BoxDecoration(
@@ -1303,16 +1565,16 @@ class _SmallInfoBox extends StatelessWidget {
             value,
             style: TextStyle(
               color: color,
-              fontSize: 17,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           Text(
             label,
             style: const TextStyle(
               color: AppTheme.subText,
-              fontSize: 10.5,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
           ),

@@ -234,6 +234,11 @@ class PrivateMatchProvider extends ChangeNotifier {
     return null;
   }
 
+  String? get correctGuessPlayerName {
+    if (firstCorrectGuess == null) return null;
+    return currentPlayer?.name;
+  }
+
   List<Map<String, dynamic>> guessesForUser(String targetUserId) {
     return currentRoundGuesses.where((guess) {
       return guess['user_id'] == targetUserId;
@@ -271,12 +276,14 @@ class PrivateMatchProvider extends ChangeNotifier {
 
   bool get roundEnded {
     if (gameFinished) return true;
+    if (firstCorrectGuess != null) return true;
     if (isTimeUp) return true;
     return areAllPlayersDoneForRound;
   }
 
   String get roundEndReason {
     if (gameFinished) return 'finished';
+    if (firstCorrectGuess != null) return 'correct';
     if (isTimeUp) return 'time';
     if (areAllPlayersDoneForRound) return 'attempts_or_correct';
     return 'active';
@@ -296,6 +303,7 @@ class PrivateMatchProvider extends ChangeNotifier {
   bool get canSubmitGuess {
     if (currentPlayer == null) return false;
     if (gameFinished) return false;
+    if (roundEnded) return false;
     if (isTimeUp) return false;
     if (hasCorrectGuessThisRound) return false;
     if (myWrongAttempts >= maxWrongAttempts) return false;
@@ -331,6 +339,107 @@ class PrivateMatchProvider extends ChangeNotifier {
 
   String get difficulty {
     return room?['difficulty']?.toString() ?? 'random';
+  }
+
+  List<String> get searchableAnswers {
+    final answersByNormalizedText = <String, String>{};
+
+    void addAnswer(String value, {bool preferThisText = false}) {
+      final cleaned = value.trim().replaceAll(RegExp(r'\s+'), ' ');
+      if (cleaned.isEmpty) return;
+
+      final key = _normalizeSearchText(cleaned);
+
+      if (preferThisText || !answersByNormalizedText.containsKey(key)) {
+        answersByNormalizedText[key] = cleaned;
+      }
+    }
+
+    for (final player in _allPlayers) {
+      addAnswer(player.name, preferThisText: true);
+
+      for (final answer in player.acceptedAnswers) {
+        addAnswer(answer);
+      }
+    }
+
+    final sorted = answersByNormalizedText.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    return sorted;
+  }
+
+  List<String> searchAnswerSuggestions(
+    String query, {
+    int limit = 8,
+  }) {
+    final normalizedQuery = _normalizeSearchText(query);
+    if (normalizedQuery.length < 2) return [];
+
+    final startsWithMatches = <String>[];
+    final containsMatches = <String>[];
+
+    for (final answer in searchableAnswers) {
+      final normalizedAnswer = _normalizeSearchText(answer);
+
+      if (normalizedAnswer.startsWith(normalizedQuery)) {
+        startsWithMatches.add(answer);
+      } else if (normalizedAnswer.contains(normalizedQuery)) {
+        containsMatches.add(answer);
+      }
+    }
+
+    final combined = <String>[
+      ...startsWithMatches,
+      ...containsMatches,
+    ];
+
+    final unique = <String>[];
+    final seen = <String>{};
+
+    for (final item in combined) {
+      final key = _normalizeSearchText(item);
+
+      if (seen.add(key)) {
+        unique.add(item);
+      }
+
+      if (unique.length >= limit) break;
+    }
+
+    return unique;
+  }
+
+  String _normalizeSearchText(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('ä', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('å', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ë', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ì', 'i')
+        .replaceAll('ï', 'i')
+        .replaceAll('î', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ò', 'o')
+        .replaceAll('ö', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ù', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('û', 'u')
+        .replaceAll('ç', 'c')
+        .replaceAll('ñ', 'n');
   }
 
   Future<void> init() async {
@@ -596,6 +705,7 @@ class PrivateMatchProvider extends ChangeNotifier {
       }
 
       final status = existingRoom['status']?.toString() ?? 'waiting';
+
       if (status == 'finished') {
         errorMessage = 'This match has already finished.';
         isLoading = false;
@@ -665,7 +775,7 @@ class PrivateMatchProvider extends ChangeNotifier {
     _pollTimer?.cancel();
 
     _pollTimer = Timer.periodic(
-      const Duration(seconds: 3),
+      const Duration(seconds: 1),
       (_) async {
         await _refreshRoom();
       },
@@ -998,7 +1108,7 @@ class PrivateMatchProvider extends ChangeNotifier {
   }
 
   Future<void> autoAdvanceRoundIfHost({
-    Duration revealDelay = const Duration(seconds: 5),
+    Duration revealDelay = const Duration(seconds: 3),
   }) async {
     if (!isHost) return;
     if (!roundEnded) return;
@@ -1009,6 +1119,13 @@ class PrivateMatchProvider extends ChangeNotifier {
     final lockedRound = currentRound;
 
     await Future.delayed(revealDelay);
+
+    if (currentRound != lockedRound) {
+      _isAutoAdvancing = false;
+      return;
+    }
+
+    await _refreshRoom();
 
     if (currentRound != lockedRound) {
       _isAutoAdvancing = false;
