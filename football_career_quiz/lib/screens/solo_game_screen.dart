@@ -134,7 +134,129 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
     _wrongBoxTimer?.cancel();
   }
 
-  void _showWrongBox() {
+  bool _centerMessageOpen = false;
+
+  Future<void> _showCenterMessage({
+    required String title,
+    required String message,
+    required bool isPositive,
+    Duration duration = const Duration(seconds: 1),
+  }) async {
+    if (_centerMessageOpen || !mounted) return;
+
+    _centerMessageOpen = true;
+
+    final color = isPositive ? AppTheme.pitchGreen : Colors.redAccent;
+
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.18),
+      transitionDuration: const Duration(milliseconds: 160),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 300,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+              decoration: BoxDecoration(
+                color: const Color(0xFF02101F).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: color.withOpacity(0.75), width: 1.8),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.28),
+                    blurRadius: 30,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPositive
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
+                    color: color,
+                    size: 52,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppTheme.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    await Future.delayed(duration);
+
+    if (mounted && _centerMessageOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    _centerMessageOpen = false;
+  }
+
+  String _formatReward(double points) {
+    if (points == 0.5) return '+0.5 point';
+    if (points == 0) return '+0 points';
+    if (points == 1) return '+1 point';
+    if (points == 2) return '+2 points';
+    if (points % 1 == 0) return '+${points.toInt()} points';
+    return '+${points.toStringAsFixed(1)} points';
+  }
+
+  double _expectedReward({
+    required bool careerFullyRevealed,
+    required int hintsUsed,
+  }) {
+    if (hintsUsed >= 3) return 0;
+    if (hintsUsed >= 1) return 0.5;
+    return careerFullyRevealed ? 1 : 2;
+  }
+
+  String _rewardReason({
+    required bool careerFullyRevealed,
+    required int hintsUsed,
+  }) {
+    if (hintsUsed >= 3) {
+      return 'because you used 3 hints, so no points are awarded.';
+    }
+    if (hintsUsed >= 1) {
+      return 'because you used a hint, so the reward is half a point.';
+    }
+    if (careerFullyRevealed) {
+      return 'because the full career was already revealed.';
+    }
+    return 'because you guessed before the full career was revealed.';
+  }
+
+  void _showWrongBox({String? playerName}) {
     final attemptsLeft = (_maxWrongAttempts - _wrongAttemptsThisRound).clamp(
       0,
       _maxWrongAttempts,
@@ -143,23 +265,26 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
     _wrongBoxTimer?.cancel();
 
     setState(() {
-      _wrongBoxMessage = 'Wrong answer — $attemptsLeft attempts left';
+      _wrongBoxMessage = null;
     });
 
-    _wrongBoxTimer = Timer(
-      const Duration(seconds: 1),
-      () {
-        if (!mounted) return;
+    final message = attemptsLeft <= 0 && playerName != null
+        ? 'The player was $playerName.\nNo attempts left.'
+        : '$attemptsLeft attempts left';
 
-        setState(() {
-          _wrongBoxMessage = null;
-        });
-      },
+    _showCenterMessage(
+      title: 'Wrong Answer',
+      message: message,
+      isPositive: false,
     );
   }
 
   void _submitGuess(GameProvider game) {
     if (_localRoundLocked || game.roundEnded) return;
+
+    final playerName = game.currentPlayer?.name ?? 'the player';
+    final careerFullyRevealedBefore = game.isCareerFullyRevealed;
+    final hintsUsedBefore = game.usedHints;
 
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -169,15 +294,28 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
 
     final wasCorrect = game.lastGuessWasCorrect == true;
 
-    if (!wasCorrect) {
-      _wrongAttemptsThisRound++;
+    if (wasCorrect) {
+      final reward = _expectedReward(
+        careerFullyRevealed: careerFullyRevealedBefore,
+        hintsUsed: hintsUsedBefore,
+      );
 
-      if (_wrongAttemptsThisRound >= _maxWrongAttempts) {
-        _localRoundLocked = true;
-      }
-
-      _showWrongBox();
+      _showCenterMessage(
+        title: 'Correct Answer!',
+        message:
+            '$playerName\n${_formatReward(reward)} ${_rewardReason(careerFullyRevealed: careerFullyRevealedBefore, hintsUsed: hintsUsedBefore)}',
+        isPositive: true,
+      );
+      return;
     }
+
+    _wrongAttemptsThisRound++;
+
+    if (_wrongAttemptsThisRound >= _maxWrongAttempts) {
+      _localRoundLocked = true;
+    }
+
+    _showWrongBox(playerName: _localRoundLocked ? playerName : null);
   }
 
   void _resetAndStartNewGame() {
@@ -219,9 +357,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
 
               if (game.isLoading) {
                 return const Center(
-                  child: CircularProgressIndicator(
-                    color: AppTheme.accent,
-                  ),
+                  child: CircularProgressIndicator(color: AppTheme.accent),
                 );
               }
 
@@ -355,7 +491,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                             SizedBox(width: 10),
                                             Expanded(
                                               child: Text(
-                                                'Guess the Player',
+                                                'Guess',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
@@ -374,7 +510,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                         _StatusChip(
                                           text: game.isCareerFullyRevealed
                                               ? '+1 available'
-                                              : 'Revealing...',
+                                              : '+2 available',
                                         ),
                                     ],
                                   ),
@@ -385,12 +521,6 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                     roundEnded: roundEnded,
                                     localRoundLocked: _localRoundLocked,
                                   ),
-                                  if (_wrongBoxMessage != null) ...[
-                                    const SizedBox(height: 12),
-                                    _WrongAnswerBox(
-                                      message: _wrongBoxMessage!,
-                                    ),
-                                  ],
                                   const SizedBox(height: 16),
                                   CareerTimeline(clubs: visibleClubs),
                                   const SizedBox(height: 14),
@@ -426,8 +556,9 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
                                                 AppTheme.pitchGreen,
-                                            foregroundColor:
-                                                const Color(0xFF02100A),
+                                            foregroundColor: const Color(
+                                              0xFF02100A,
+                                            ),
                                             disabledBackgroundColor:
                                                 AppTheme.border,
                                             disabledForegroundColor:
@@ -491,8 +622,9 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                       width: double.infinity,
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.pitchGreen
-                                            .withOpacity(0.13),
+                                        color: AppTheme.pitchGreen.withOpacity(
+                                          0.13,
+                                        ),
                                         borderRadius: BorderRadius.circular(18),
                                         border: Border.all(
                                           color: AppTheme.pitchGreen
@@ -679,8 +811,12 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
     return true;
   }
 
-  Future<void> _selectSuggestion(String value) async {
-    if (!widget.enabled) return;
+  bool _isSelectingSuggestion = false;
+
+  void _selectSuggestion(String value) {
+    if (!widget.enabled || _isSelectingSuggestion) return;
+
+    _isSelectingSuggestion = true;
 
     widget.controller.text = value;
     widget.controller.selection = TextSelection.collapsed(offset: value.length);
@@ -693,11 +829,11 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
 
     FocusScope.of(context).unfocus();
 
-    await Future.delayed(const Duration(milliseconds: 50));
-
-    if (!mounted) return;
-
-    widget.onSelected(value);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onSelected(value);
+      _isSelectingSuggestion = false;
+    });
   }
 
   @override
@@ -747,12 +883,13 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
 
                   return Material(
                     color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _selectSuggestion(suggestion),
+                    child: Listener(
+                      behavior: HitTestBehavior.opaque,
+                      onPointerDown: (_) => _selectSuggestion(suggestion),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
-                          vertical: 12,
+                          vertical: 13,
                         ),
                         child: Row(
                           children: [
@@ -854,9 +991,7 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
 class _WrongAnswerBox extends StatelessWidget {
   final String message;
 
-  const _WrongAnswerBox({
-    required this.message,
-  });
+  const _WrongAnswerBox({required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -867,17 +1002,11 @@ class _WrongAnswerBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.red.withOpacity(0.14),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.redAccent.withOpacity(0.45),
-        ),
+        border: Border.all(color: Colors.redAccent.withOpacity(0.45)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.close_rounded,
-            color: Colors.redAccent,
-            size: 20,
-          ),
+          const Icon(Icons.close_rounded, color: Colors.redAccent, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -909,16 +1038,11 @@ class _AttemptMiniBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 8,
-        horizontal: 10,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       decoration: BoxDecoration(
         color: color.withOpacity(0.10),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Column(
         children: [
@@ -962,65 +1086,38 @@ class _RoundInfoBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final retired = game.isCurrentPlayerRetired;
 
-    String message;
-
-    if (roundEnded) {
-      message = 'Answer: $playerName';
-    } else if (localRoundLocked) {
-      message = 'No attempts left.\nPress Next Round to continue.';
-    } else if (game.isCareerFullyRevealed) {
-      message = 'Full career revealed.\nCorrect guess now gives 1 point.';
-    } else {
-      message = 'A new club appears every ${GameRules.revealSeconds} seconds.';
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          message,
-          style: const TextStyle(
-            fontSize: 12.2,
-            color: AppTheme.subText,
-            fontWeight: FontWeight.w500,
-            height: 1.35,
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: retired
+            ? AppTheme.gold.withOpacity(0.12)
+            : AppTheme.pitchGreen.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: retired
+              ? AppTheme.gold.withOpacity(0.35)
+              : AppTheme.pitchGreen.withOpacity(0.35),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: retired
-                ? AppTheme.gold.withOpacity(0.12)
-                : AppTheme.pitchGreen.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: retired
-                  ? AppTheme.gold.withOpacity(0.35)
-                  : AppTheme.pitchGreen.withOpacity(0.35),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            retired ? Icons.history_rounded : Icons.flash_on_rounded,
+            color: retired ? AppTheme.gold : AppTheme.pitchGreen,
+            size: 15,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            game.currentPlayerStatusText,
+            style: TextStyle(
+              color: retired ? AppTheme.gold : AppTheme.pitchGreen,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                retired ? Icons.history_rounded : Icons.flash_on_rounded,
-                color: retired ? AppTheme.gold : AppTheme.pitchGreen,
-                size: 15,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                game.currentPlayerStatusText,
-                style: TextStyle(
-                  color: retired ? AppTheme.gold : AppTheme.pitchGreen,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1028,22 +1125,84 @@ class _RoundInfoBlock extends StatelessWidget {
 class _HintBox extends StatelessWidget {
   final GameProvider game;
 
-  const _HintBox({
-    required this.game,
-  });
+  const _HintBox({required this.game});
+
+  String _penaltyText(int hintsUsed) {
+    if (hintsUsed == 0) {
+      return 'No hints used — +2 before full career, +1 after full career.';
+    }
+    if (hintsUsed >= 3) {
+      return '3 hints used — correct answer gives 0 points.';
+    }
+    return 'Hint used — correct answer gives only 0.5 point.';
+  }
+
+  Future<void> _confirmAndUseHint(BuildContext context) async {
+    if (!game.canUseHint) return;
+
+    final nextHintNumber = game.usedHints + 1;
+    String? warning;
+
+    if (nextHintNumber == 1) {
+      warning =
+          'Are you sure? If you use a hint now, a correct answer will give only 0.5 point.';
+    } else if (nextHintNumber == 3) {
+      warning =
+          'Are you sure? This is the third hint, so a correct answer will give 0 points.';
+    }
+
+    if (warning != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF061B30),
+            title: const Text(
+              'Use Hint?',
+              style: TextStyle(
+                color: AppTheme.gold,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            content: Text(
+              warning!,
+              style: const TextStyle(
+                color: AppTheme.text,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.gold,
+                  foregroundColor: const Color(0xFF02101F),
+                ),
+                child: const Text(
+                  'Yes, use it',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirmed != true) return;
+    }
+
+    game.useHint();
+  }
 
   @override
   Widget build(BuildContext context) {
     final hintsUsed = game.usedHints;
-
-    String penaltyText;
-    if (hintsUsed == 0) {
-      penaltyText = 'No hints used — normal points available';
-    } else if (hintsUsed >= 3) {
-      penaltyText = 'Hints used: $hintsUsed — correct answer gives 0 points';
-    } else {
-      penaltyText = 'Hints used: $hintsUsed — correct answer gives 0.5 point';
-    }
 
     return Column(
       children: [
@@ -1051,7 +1210,8 @@ class _HintBox extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: game.canUseHint ? game.useHint : null,
+                onPressed:
+                    game.canUseHint ? () => _confirmAndUseHint(context) : null,
                 icon: const Icon(Icons.lightbulb_rounded, size: 18),
                 label: Text(
                   hintsUsed == 0 ? 'Use Hint' : 'Use Another Hint',
@@ -1063,9 +1223,7 @@ class _HintBox extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.gold,
                   disabledForegroundColor: AppTheme.subText,
-                  side: BorderSide(
-                    color: AppTheme.gold.withOpacity(0.42),
-                  ),
+                  side: BorderSide(color: AppTheme.gold.withOpacity(0.42)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
@@ -1075,29 +1233,27 @@ class _HintBox extends StatelessWidget {
             ),
           ],
         ),
-        if (game.revealedHints.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.gold.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppTheme.gold.withOpacity(0.35),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  penaltyText,
-                  style: const TextStyle(
-                    color: AppTheme.gold,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.gold.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.gold.withOpacity(0.35)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _penaltyText(hintsUsed),
+                style: const TextStyle(
+                  color: AppTheme.gold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
                 ),
+              ),
+              if (game.revealedHints.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 ...game.revealedHints.asMap().entries.map(
                       (entry) => Padding(
@@ -1113,9 +1269,9 @@ class _HintBox extends StatelessWidget {
                       ),
                     ),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ],
     );
   }
@@ -1124,9 +1280,7 @@ class _HintBox extends StatelessWidget {
 class _FinalResultView extends StatelessWidget {
   final GameProvider game;
 
-  const _FinalResultView({
-    required this.game,
-  });
+  const _FinalResultView({required this.game});
 
   @override
   Widget build(BuildContext context) {
@@ -1318,9 +1472,7 @@ class _FinalResultView extends StatelessWidget {
 class _MissedPlayersPanel extends StatelessWidget {
   final List<RoundReview> missedRounds;
 
-  const _MissedPlayersPanel({
-    required this.missedRounds,
-  });
+  const _MissedPlayersPanel({required this.missedRounds});
 
   @override
   Widget build(BuildContext context) {
@@ -1373,9 +1525,7 @@ class _MissedPlayersPanel extends StatelessWidget {
           else
             ...missedRounds.asMap().entries.map(
                   (entry) => _MissedPlayerCard(
-                    index: entry.key + 1,
-                    review: entry.value,
-                  ),
+                      index: entry.key + 1, review: entry.value),
                 ),
         ],
       ),
@@ -1387,10 +1537,7 @@ class _MissedPlayerCard extends StatelessWidget {
   final int index;
   final RoundReview review;
 
-  const _MissedPlayerCard({
-    required this.index,
-    required this.review,
-  });
+  const _MissedPlayerCard({required this.index, required this.review});
 
   @override
   Widget build(BuildContext context) {
@@ -1403,9 +1550,7 @@ class _MissedPlayerCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.045),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.08),
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1472,10 +1617,7 @@ class _SmallReviewChip extends StatelessWidget {
   final String text;
   final IconData icon;
 
-  const _SmallReviewChip({
-    required this.text,
-    required this.icon,
-  });
+  const _SmallReviewChip({required this.text, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -1484,9 +1626,7 @@ class _SmallReviewChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.stadiumBlue.withOpacity(0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppTheme.stadiumBlue.withOpacity(0.22),
-        ),
+        border: Border.all(color: AppTheme.stadiumBlue.withOpacity(0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1629,10 +1769,7 @@ class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _CircleIconButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _CircleIconButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1685,9 +1822,7 @@ class _GlowingTargetIcon extends StatelessWidget {
 class _StatusChip extends StatelessWidget {
   final String text;
 
-  const _StatusChip({
-    required this.text,
-  });
+  const _StatusChip({required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -1696,9 +1831,7 @@ class _StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.pitchGreen.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppTheme.pitchGreen.withOpacity(0.35),
-        ),
+        border: Border.all(color: AppTheme.pitchGreen.withOpacity(0.35)),
       ),
       child: Text(
         text,

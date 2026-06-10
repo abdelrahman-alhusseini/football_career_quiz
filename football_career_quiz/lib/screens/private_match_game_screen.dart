@@ -27,12 +27,171 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
     super.dispose();
   }
 
+  String _formatReward(double points) {
+    if (points == 0.5) return '+0.5 point';
+    if (points == 0) return '+0 points';
+    if (points == 1) return '+1 point';
+    if (points == 2) return '+2 points';
+    if (points % 1 == 0) return '+${points.toInt()} points';
+    return '+${points.toStringAsFixed(1)} points';
+  }
+
+  double _expectedReward({
+    required bool careerFullyRevealed,
+    required int hintsUsed,
+  }) {
+    if (hintsUsed >= 3) return 0;
+    if (hintsUsed >= 1) return 0.5;
+    return careerFullyRevealed ? 1 : 2;
+  }
+
+  String _rewardReason({
+    required bool careerFullyRevealed,
+    required int hintsUsed,
+  }) {
+    if (hintsUsed >= 3) {
+      return 'because 3 hints were used, so no points are awarded.';
+    }
+    if (hintsUsed >= 1) {
+      return 'because a hint was used, so the reward is half a point.';
+    }
+    if (careerFullyRevealed) {
+      return 'because the full career was already revealed.';
+    }
+    return 'because the full career was not revealed yet.';
+  }
+
   Future<void> _submitGuess(PrivateMatchProvider match) async {
     final text = _guessController.text.trim();
     if (text.isEmpty) return;
 
+    final playerName = match.currentPlayer?.name ?? 'the player';
+    final careerFullyRevealedBefore = match.isCareerFullyRevealed;
+    final hintsUsedBefore = match.revealedHintCount;
+    final wrongBefore = match.myWrongAttempts;
+
     await match.submitGuess(text);
     _guessController.clear();
+
+    if (!mounted) return;
+
+    if (match.lastGuessWasCorrect == true) {
+      final reward = _expectedReward(
+        careerFullyRevealed: careerFullyRevealedBefore,
+        hintsUsed: hintsUsedBefore,
+      );
+
+      _showCenterMessage(
+        title: 'Correct Answer!',
+        message:
+            '$playerName\n${_formatReward(reward)} ${_rewardReason(careerFullyRevealed: careerFullyRevealedBefore, hintsUsed: hintsUsedBefore)}',
+        isPositive: true,
+      );
+      return;
+    }
+
+    if (match.myWrongAttempts > wrongBefore ||
+        match.lastGuessWasCorrect == false) {
+      final lost = match.attemptsLeft <= 0;
+      _showCenterMessage(
+        title: 'Wrong Answer',
+        message: lost
+            ? 'The player was $playerName.\nNo attempts left.'
+            : '${match.attemptsLeft} attempts left',
+        isPositive: false,
+      );
+    }
+  }
+
+  bool _centerMessageOpen = false;
+
+  Future<void> _showCenterMessage({
+    required String title,
+    required String message,
+    required bool isPositive,
+    Duration duration = const Duration(seconds: 1),
+  }) async {
+    if (_centerMessageOpen || !mounted) return;
+
+    _centerMessageOpen = true;
+
+    final color = isPositive ? AppTheme.pitchGreen : Colors.redAccent;
+
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.18),
+      transitionDuration: const Duration(milliseconds: 160),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 300,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+              decoration: BoxDecoration(
+                color: const Color(0xFF02101F).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: color.withOpacity(0.75),
+                  width: 1.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.28),
+                    blurRadius: 30,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPositive
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
+                    color: color,
+                    size: 52,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppTheme.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    await Future.delayed(duration);
+
+    if (mounted && _centerMessageOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    _centerMessageOpen = false;
   }
 
   Future<void> _copyRoomCode(String code) async {
@@ -148,6 +307,16 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                     child: Column(
                       children: [
                         _AutoRoundAdvancer(match: match),
+                        _RoundEventWatcher(
+                          match: match,
+                          onShow: (title, message, isPositive) {
+                            _showCenterMessage(
+                              title: title,
+                              message: message,
+                              isPositive: isPositive,
+                            );
+                          },
+                        ),
                         Row(
                           children: [
                             _CircleIconButton(
@@ -249,16 +418,6 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                         icon: _statusIcon(player.status),
                                         color: _statusColor(player.status),
                                       ),
-                                      const SizedBox(width: 8),
-                                      _SmallChip(
-                                        text: match.revealedHintCount == 0
-                                            ? 'No hints used'
-                                            : '${match.revealedHintCount} hints',
-                                        icon: Icons.lightbulb_rounded,
-                                        color: match.revealedHintCount == 0
-                                            ? AppTheme.pitchGreen
-                                            : AppTheme.gold,
-                                      ),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
@@ -268,9 +427,9 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                     _AnswerRevealBox(match: match),
                                   ],
                                   const SizedBox(height: 14),
-                                  _HintPanel(match: match),
-                                  const SizedBox(height: 14),
                                   _AutoCareerTimeline(match: match),
+                                  const SizedBox(height: 14),
+                                  _HintPanel(match: match),
                                   const SizedBox(height: 14),
                                   if (match.feedbackMessage != null) ...[
                                     _FeedbackBox(match: match),
@@ -309,6 +468,106 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
         ),
       ),
     );
+  }
+}
+
+class _RoundEventWatcher extends StatefulWidget {
+  final PrivateMatchProvider match;
+  final void Function(String title, String message, bool isPositive) onShow;
+
+  const _RoundEventWatcher({
+    required this.match,
+    required this.onShow,
+  });
+
+  @override
+  State<_RoundEventWatcher> createState() => _RoundEventWatcherState();
+}
+
+class _RoundEventWatcherState extends State<_RoundEventWatcher> {
+  int? _shownRound;
+
+  String _formatReward(double points) {
+    if (points == 0.5) return '+0.5 point';
+    if (points == 0) return '+0 points';
+    if (points == 1) return '+1 point';
+    if (points == 2) return '+2 points';
+    if (points % 1 == 0) return '+${points.toInt()} points';
+    return '+${points.toStringAsFixed(1)} points';
+  }
+
+  String _winnerName(String userId) {
+    for (final player in widget.match.roomPlayers) {
+      if (player.userId == userId) return player.displayName;
+    }
+    return 'Opponent';
+  }
+
+  String _pointsReason(double points) {
+    if (points == 0.5) return 'because a hint was used.';
+    if (points == 0) return 'because 3 hints were used.';
+    if (points == 1) return 'because the full career was revealed.';
+    if (points == 2) return 'because the full career was not revealed yet.';
+    return '';
+  }
+
+  void _check() {
+    final match = widget.match;
+    if (!match.roundEnded) return;
+    if (_shownRound == match.currentRound) return;
+
+    _shownRound = match.currentRound;
+
+    final playerName = match.currentPlayer?.name ?? 'the player';
+    final correctGuess = match.firstCorrectGuess;
+
+    if (correctGuess != null) {
+      final winnerId = correctGuess['user_id']?.toString() ?? '';
+      final points = (correctGuess['points'] as num?)?.toDouble() ?? 0;
+      final pointsText = _formatReward(points);
+      final reason = _pointsReason(points);
+
+      if (winnerId == match.userId) {
+        widget.onShow(
+          'Correct Answer!',
+          '$playerName\nYou got $pointsText $reason',
+          true,
+        );
+      } else {
+        final winnerName = _winnerName(winnerId);
+        widget.onShow(
+          'Round Lost',
+          '$winnerName guessed $playerName.\n$winnerName got $pointsText $reason',
+          false,
+        );
+      }
+      return;
+    }
+
+    if (match.roundEndReason == 'time' || match.areAllPlayersDoneForRound) {
+      widget.onShow(
+        'Round Finished',
+        'Nobody guessed it.\nThe player was $playerName.',
+        false,
+      );
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _RoundEventWatcher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.match.currentRound != widget.match.currentRound) {
+      _shownRound = null;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _check());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _check());
+    return const SizedBox.shrink();
   }
 }
 
@@ -682,28 +941,14 @@ class _RoundMessageState extends State<_RoundMessage> {
     String message;
 
     if (widget.match.roundEnded) {
-      if (widget.match.roundEndReason == 'correct') {
-        message =
-            'Someone guessed correctly. The player was ${player?.name ?? 'the player'}.';
-      } else if (widget.match.isTimeUpAt(DateTime.now())) {
-        message = 'Time is up. The player was ${player?.name ?? 'the player'}.';
-      } else if (widget.match.areAllPlayersDoneForRound) {
-        message =
-            'Round finished. The player was ${player?.name ?? 'the player'}.';
-      } else {
-        message =
-            'Round ended. The player was ${player?.name ?? 'the player'}.';
-      }
+      message = 'Next round will start automatically...';
     } else if (widget.match.hasCorrectGuessThisRound) {
-      message = 'You guessed correctly. Waiting for the next round.';
+      message = 'Waiting for the next round...';
     } else if (widget.match.myWrongAttempts >=
         PrivateMatchProvider.maxWrongAttempts) {
-      message =
-          'You used all 3 wrong attempts. Waiting for your friend to finish.';
-    } else if (widget.match.isCareerFullyRevealed) {
-      message = 'Full career revealed. Correct guess now gives 1 point.';
+      message = 'No attempts left. Waiting for your friend...';
     } else {
-      message = 'A new club appears every 3 seconds.';
+      message = 'Use the clubs, status, and hints to guess the player.';
     }
 
     return Text(
@@ -735,16 +980,14 @@ class _AnswerSearchInput extends StatefulWidget {
 
 class _AnswerSearchInputState extends State<_AnswerSearchInput> {
   final FocusNode _focusNode = FocusNode();
-
   List<String> _suggestions = [];
-  bool _isSelectingSuggestion = false;
 
   @override
   void initState() {
     super.initState();
 
     widget.controller.addListener(_updateSuggestions);
-    _focusNode.addListener(_handleFocusChange);
+    _focusNode.addListener(_updateSuggestions);
   }
 
   @override
@@ -755,52 +998,30 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
       oldWidget.controller.removeListener(_updateSuggestions);
       widget.controller.addListener(_updateSuggestions);
     }
-
-    if (oldWidget.match.currentRound != widget.match.currentRound) {
-      _clearSuggestions();
-    }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_updateSuggestions);
-    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.removeListener(_updateSuggestions);
     _focusNode.dispose();
     super.dispose();
   }
 
-  void _handleFocusChange() {
-    if (_isSelectingSuggestion) return;
-    _updateSuggestions();
-  }
-
-  void _clearSuggestions() {
-    if (!mounted) return;
-    if (_suggestions.isEmpty) return;
-
-    setState(() {
-      _suggestions = [];
-    });
-  }
-
   void _updateSuggestions() {
     if (!mounted) return;
-    if (_isSelectingSuggestion) return;
 
     if (!_focusNode.hasFocus || !widget.match.canSubmitGuess) {
-      _clearSuggestions();
-      return;
-    }
-
-    final query = widget.controller.text.trim();
-
-    if (query.length < 2) {
-      _clearSuggestions();
+      if (_suggestions.isNotEmpty) {
+        setState(() {
+          _suggestions = [];
+        });
+      }
       return;
     }
 
     final next = widget.match.searchAnswerSuggestions(
-      query,
+      widget.controller.text,
       limit: 7,
     );
 
@@ -821,16 +1042,15 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
     return true;
   }
 
-  void _selectSuggestionImmediately(String value) {
-    if (!widget.match.canSubmitGuess) return;
-    if (_isSelectingSuggestion) return;
+  bool _isSelectingSuggestion = false;
+
+  void _selectSuggestion(String value) {
+    if (_isSelectingSuggestion || !widget.match.canSubmitGuess) return;
 
     _isSelectingSuggestion = true;
 
     widget.controller.text = value;
-    widget.controller.selection = TextSelection.collapsed(
-      offset: value.length,
-    );
+    widget.controller.selection = TextSelection.collapsed(offset: value.length);
 
     if (mounted) {
       setState(() {
@@ -842,9 +1062,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-
       widget.onSubmit();
-
       _isSelectingSuggestion = false;
     });
   }
@@ -878,7 +1096,6 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
         children: [
           if (_suggestions.isNotEmpty) ...[
             Container(
-              width: double.infinity,
               constraints: const BoxConstraints(maxHeight: 190),
               decoration: BoxDecoration(
                 color: const Color(0xFF061B30).withOpacity(0.98),
@@ -889,7 +1106,6 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
               ),
               child: ListView.separated(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 itemCount: _suggestions.length,
                 separatorBuilder: (_, __) => Divider(
@@ -901,11 +1117,9 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
 
                   return Material(
                     color: Colors.transparent,
-                    child: GestureDetector(
+                    child: Listener(
                       behavior: HitTestBehavior.opaque,
-                      onTapDown: (_) {
-                        _selectSuggestionImmediately(suggestion);
-                      },
+                      onPointerDown: (_) => _selectSuggestion(suggestion),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -924,8 +1138,8 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                                 suggestion,
                                 style: const TextStyle(
                                   color: AppTheme.text,
-                                  fontSize: 13.2,
-                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
@@ -966,12 +1180,10 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                     suffixIcon: widget.controller.text.trim().isEmpty
                         ? null
                         : IconButton(
-                            onPressed: !canSubmit
-                                ? null
-                                : () {
-                                    widget.controller.clear();
-                                    _updateSuggestions();
-                                  },
+                            onPressed: () {
+                              widget.controller.clear();
+                              _updateSuggestions();
+                            },
                             icon: const Icon(Icons.close_rounded),
                           ),
                   ),
@@ -1036,17 +1248,89 @@ class _HintPanel extends StatelessWidget {
     required this.match,
   });
 
+  String _penaltyText(int hintsUsed) {
+    if (hintsUsed == 0) {
+      return 'No hints used — +2 before full career, +1 after full career.';
+    }
+    if (hintsUsed >= 3) {
+      return '3 hints used — correct answer gives 0 points.';
+    }
+    return 'Hint used — correct answer gives only 0.5 point.';
+  }
+
+  Future<bool> _confirmHint(BuildContext context, int nextHintNumber) async {
+    String? warning;
+
+    if (nextHintNumber == 1) {
+      warning =
+          'Are you sure? If this hint is used, a correct answer will give only 0.5 point.';
+    } else if (nextHintNumber == 3) {
+      warning =
+          'Are you sure? This is the third hint, so a correct answer will give 0 points.';
+    }
+
+    if (warning == null) return true;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF061B30),
+          title: const Text(
+            'Use Hint?',
+            style: TextStyle(
+              color: AppTheme.gold,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            warning!,
+            style: const TextStyle(
+              color: AppTheme.text,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.gold,
+                foregroundColor: const Color(0xFF02101F),
+              ),
+              child: const Text(
+                'Yes, use it',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return confirmed == true;
+  }
+
+  Future<void> _requestHint(BuildContext context) async {
+    final confirmed = await _confirmHint(context, match.revealedHintCount + 1);
+    if (!confirmed) return;
+    await match.requestHint();
+  }
+
+  Future<void> _acceptHint(BuildContext context) async {
+    final confirmed = await _confirmHint(context, match.revealedHintCount + 1);
+    if (!confirmed) return;
+    await match.acceptHint();
+  }
+
   @override
   Widget build(BuildContext context) {
-    String penaltyText;
-
-    if (match.revealedHintCount == 0) {
-      penaltyText = 'No hints used — normal points available.';
-    } else if (match.revealedHintCount >= 3) {
-      penaltyText = '3+ hints used — correct guess gives 0 points.';
-    } else {
-      penaltyText = 'Hints used — correct guess gives 0.5 point.';
-    }
+    final penaltyText = _penaltyText(match.revealedHintCount);
 
     return Container(
       width: double.infinity,
@@ -1098,7 +1382,7 @@ class _HintPanel extends StatelessWidget {
           const SizedBox(height: 10),
           if (match.didIRequestHint)
             const Text(
-              'Hint requested.\nWaiting for your friend to accept.',
+              'Hint requested. Waiting for your friend to accept.',
               style: TextStyle(
                 color: AppTheme.gold,
                 fontSize: 12,
@@ -1110,7 +1394,7 @@ class _HintPanel extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: match.acceptHint,
+                    onPressed: () => _acceptHint(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.pitchGreen,
                       foregroundColor: const Color(0xFF02100A),
@@ -1141,7 +1425,8 @@ class _HintPanel extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: match.canRequestHint ? match.requestHint : null,
+                onPressed:
+                    match.canRequestHint ? () => _requestHint(context) : null,
                 icon: const Icon(Icons.lightbulb_rounded),
                 label: const Text(
                   'Request Hint',

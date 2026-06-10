@@ -54,8 +54,6 @@ class GameProvider extends ChangeNotifier {
   final Random _random = Random();
   Timer? _timer;
 
-  static const int maxWrongAttempts = 3;
-
   List<PlayerModel> _players = [];
 
   PlayerModel? currentPlayer;
@@ -66,8 +64,6 @@ class GameProvider extends ChangeNotifier {
 
   int correctAnswers = 0;
   int skippedRounds = 0;
-
-  int wrongAttemptsThisRound = 0;
 
   bool isLoading = true;
   bool roundEnded = false;
@@ -97,20 +93,9 @@ class GameProvider extends ChangeNotifier {
 
   int get totalRounds => GameRules.totalRounds;
 
-  int get maxScore => GameRules.totalRounds * 3;
+  int get maxScore => GameRules.totalRounds * 2;
 
   int get usedHints => revealedHints.length;
-
-  int get attemptsLeft {
-    final left = maxWrongAttempts - wrongAttemptsThisRound;
-    return left < 0 ? 0 : left;
-  }
-
-  bool get canSubmitGuess {
-    if (currentPlayer == null) return false;
-    if (roundEnded || gameFinished) return false;
-    return wrongAttemptsThisRound < maxWrongAttempts;
-  }
 
   List<RoundReview> get missedRounds {
     return roundReviews.where((review) => !review.wasCorrect).toList();
@@ -224,107 +209,6 @@ class GameProvider extends ChangeNotifier {
     }).toList();
   }
 
-  List<String> get searchableAnswers {
-    final answersByNormalizedText = <String, String>{};
-
-    void addAnswer(String value, {bool preferThisText = false}) {
-      final cleaned = value.trim().replaceAll(RegExp(r'\s+'), ' ');
-      if (cleaned.isEmpty) return;
-
-      final key = _normalizeSearchText(cleaned);
-
-      if (preferThisText || !answersByNormalizedText.containsKey(key)) {
-        answersByNormalizedText[key] = cleaned;
-      }
-    }
-
-    for (final player in _players) {
-      addAnswer(player.name, preferThisText: true);
-
-      for (final answer in player.acceptedAnswers) {
-        addAnswer(answer);
-      }
-    }
-
-    final sorted = answersByNormalizedText.values.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-    return sorted;
-  }
-
-  List<String> searchAnswerSuggestions(
-    String query, {
-    int limit = 8,
-  }) {
-    final normalizedQuery = _normalizeSearchText(query);
-    if (normalizedQuery.length < 2) return [];
-
-    final startsWithMatches = <String>[];
-    final containsMatches = <String>[];
-
-    for (final answer in searchableAnswers) {
-      final normalizedAnswer = _normalizeSearchText(answer);
-
-      if (normalizedAnswer.startsWith(normalizedQuery)) {
-        startsWithMatches.add(answer);
-      } else if (normalizedAnswer.contains(normalizedQuery)) {
-        containsMatches.add(answer);
-      }
-    }
-
-    final combined = <String>[
-      ...startsWithMatches,
-      ...containsMatches,
-    ];
-
-    final unique = <String>[];
-    final seen = <String>{};
-
-    for (final item in combined) {
-      final key = _normalizeSearchText(item);
-
-      if (seen.add(key)) {
-        unique.add(item);
-      }
-
-      if (unique.length >= limit) break;
-    }
-
-    return unique;
-  }
-
-  String _normalizeSearchText(String value) {
-    return value
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .replaceAll('á', 'a')
-        .replaceAll('à', 'a')
-        .replaceAll('ä', 'a')
-        .replaceAll('â', 'a')
-        .replaceAll('ã', 'a')
-        .replaceAll('å', 'a')
-        .replaceAll('é', 'e')
-        .replaceAll('è', 'e')
-        .replaceAll('ë', 'e')
-        .replaceAll('ê', 'e')
-        .replaceAll('í', 'i')
-        .replaceAll('ì', 'i')
-        .replaceAll('ï', 'i')
-        .replaceAll('î', 'i')
-        .replaceAll('ó', 'o')
-        .replaceAll('ò', 'o')
-        .replaceAll('ö', 'o')
-        .replaceAll('ô', 'o')
-        .replaceAll('õ', 'o')
-        .replaceAll('ú', 'u')
-        .replaceAll('ù', 'u')
-        .replaceAll('ü', 'u')
-        .replaceAll('û', 'u')
-        .replaceAll('ç', 'c')
-        .replaceAll('ñ', 'n');
-  }
-
   Future<void> loadPlayers() async {
     isLoading = true;
     notifyListeners();
@@ -360,7 +244,6 @@ class GameProvider extends ChangeNotifier {
 
     correctAnswers = 0;
     skippedRounds = 0;
-    wrongAttemptsThisRound = 0;
 
     revealedHints.clear();
     _roundHints = [];
@@ -389,7 +272,6 @@ class GameProvider extends ChangeNotifier {
     currentPlayer = pool[_random.nextInt(pool.length)];
 
     revealedClubCount = 1;
-    wrongAttemptsThisRound = 0;
     revealedHints.clear();
 
     if (currentPlayer != null) {
@@ -436,6 +318,9 @@ class GameProvider extends ChangeNotifier {
 
   List<String> _buildHintsForPlayer(PlayerModel player) {
     final hints = <String>[];
+
+    // Active / Retired is intentionally NOT added here.
+    // It is shown separately in the UI and does not count as a hint.
 
     for (final customHint in player.hints) {
       final text = customHint.trim();
@@ -506,7 +391,6 @@ class GameProvider extends ChangeNotifier {
     final player = currentPlayer;
 
     if (player == null || roundEnded || gameFinished) return;
-    if (!canSubmitGuess) return;
 
     final isCorrect = AnswerChecker.isCorrect(
       guess: guess,
@@ -514,27 +398,8 @@ class GameProvider extends ChangeNotifier {
     );
 
     if (!isCorrect) {
-      wrongAttemptsThisRound++;
       lastGuessWasCorrect = false;
-
-      if (wrongAttemptsThisRound >= maxWrongAttempts) {
-        roundEnded = true;
-
-        _saveRoundReview(
-          player: player,
-          wasCorrect: false,
-          wasSkipped: false,
-          earnedPoints: 0,
-        );
-
-        feedbackMessage =
-            'Wrong answer.\nNo attempts left.\nThe player was ${player.name}.';
-
-        _timer?.cancel();
-      } else {
-        feedbackMessage = 'Wrong answer.\n$attemptsLeft attempts left.';
-      }
-
+      feedbackMessage = 'Wrong answer.\nTry again!';
       notifyListeners();
       return;
     }
@@ -629,7 +494,6 @@ class GameProvider extends ChangeNotifier {
 
     feedbackMessage = null;
     lastGuessWasCorrect = null;
-    wrongAttemptsThisRound = 0;
   }
 
   @override

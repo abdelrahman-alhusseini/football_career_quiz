@@ -1,16 +1,51 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
-import 'coming_soon_screen.dart';
-import 'difficulty_screen.dart';
-import 'friend_mode_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:football_career_quiz/screens/difficulty_screen.dart';
+import 'package:football_career_quiz/screens/friend_mode_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   static const String routeName = '/';
 
+  // Keep this as your actual home wallpaper path.
+  // If your image has a different name, change only this line.
+  static const String _backgroundAsset =
+      'assets/images/home_screen_background.png';
+
+  // Turn this to true if you want to see the invisible button areas.
+  static const bool _showTapAreas = false;
+
+  // Your selected home image is 864 x 1536.
+  static const double _imageWidth = 864;
+  static const double _imageHeight = 1536;
+
+  // Button positions measured from the image itself.
+  // These match the new selected wallpaper.
+  static const Rect _soloButtonRect = Rect.fromLTWH(96, 1012, 672, 152);
+  static const Rect _friendsButtonRect = Rect.fromLTWH(96, 1182, 672, 152);
+  static const Rect _rankedButtonRect = Rect.fromLTWH(96, 1348, 672, 152);
+
   const HomeScreen({super.key});
 
-  // Set this to true only if you want to see the invisible button areas.
-  static const bool showButtonDebugBorders = false;
+  Rect _imageRectToScreenRect(Size screenSize, Rect imageRect) {
+    final scale = math.max(
+      screenSize.width / _imageWidth,
+      screenSize.height / _imageHeight,
+    );
+
+    final displayedImageWidth = _imageWidth * scale;
+    final displayedImageHeight = _imageHeight * scale;
+
+    final offsetX = (screenSize.width - displayedImageWidth) / 2;
+    final offsetY = (screenSize.height - displayedImageHeight) / 2;
+
+    return Rect.fromLTWH(
+      offsetX + imageRect.left * scale,
+      offsetY + imageRect.top * scale,
+      imageRect.width * scale,
+      imageRect.height * scale,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,56 +53,44 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       body: LayoutBuilder(
         builder: (context, constraints) {
+          final screenSize = Size(
+            constraints.maxWidth,
+            constraints.maxHeight,
+          );
+
+          final soloRect = _imageRectToScreenRect(screenSize, _soloButtonRect);
+          final friendsRect =
+              _imageRectToScreenRect(screenSize, _friendsButtonRect);
+          final rankedRect =
+              _imageRectToScreenRect(screenSize, _rankedButtonRect);
+
           return Stack(
+            fit: StackFit.expand,
             children: [
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/images/home_menu_bg.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                ),
+              Image.asset(
+                _backgroundAsset,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
               ),
-
-              // SOLO MODE invisible button
               _InvisibleMenuButton(
-                topFactor: 0.425,
-                leftFactor: 0.085,
-                widthFactor: 0.830,
-                heightFactor: 0.120,
-                debug: showButtonDebugBorders,
+                rect: soloRect,
+                debugColor: Colors.green,
                 onTap: () {
-                  Navigator.pushNamed(context, DifficultyScreen.routeName);
+                  Navigator.of(context).pushNamed(DifficultyScreen.routeName);
                 },
               ),
-
-              // PLAY WITH FRIENDS invisible button
               _InvisibleMenuButton(
-                topFactor: 0.570,
-                leftFactor: 0.085,
-                widthFactor: 0.830,
-                heightFactor: 0.120,
-                debug: showButtonDebugBorders,
+                rect: friendsRect,
+                debugColor: Colors.blue,
                 onTap: () {
-                  Navigator.pushNamed(context, FriendModeScreen.routeName);
+                  Navigator.of(context).pushNamed(FriendModeScreen.routeName);
                 },
               ),
-
-              // ONLINE RANKED invisible button
               _InvisibleMenuButton(
-                topFactor: 0.715,
-                leftFactor: 0.085,
-                widthFactor: 0.830,
-                heightFactor: 0.120,
-                debug: showButtonDebugBorders,
+                rect: rankedRect,
+                debugColor: Colors.amber,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ComingSoonScreen(
-                        title: 'Online Ranked',
-                      ),
-                    ),
-                  );
+                  Navigator.of(context).pushNamed('/coming-soon');
                 },
               ),
             ],
@@ -79,38 +102,37 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _InvisibleMenuButton extends StatelessWidget {
-  final double topFactor;
-  final double leftFactor;
-  final double widthFactor;
-  final double heightFactor;
+  final Rect rect;
+  final Color debugColor;
   final VoidCallback onTap;
-  final bool debug;
 
   const _InvisibleMenuButton({
-    required this.topFactor,
-    required this.leftFactor,
-    required this.widthFactor,
-    required this.heightFactor,
+    required this.rect,
+    required this.debugColor,
     required this.onTap,
-    required this.debug,
   });
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: MediaQuery.of(context).size.height * topFactor,
-      left: MediaQuery.of(context).size.width * leftFactor,
-      width: MediaQuery.of(context).size.width * widthFactor,
-      height: MediaQuery.of(context).size.height * heightFactor,
-      child: Material(
-        color: debug ? Colors.red.withOpacity(0.25) : Colors.transparent,
-        borderRadius: BorderRadius.circular(30),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(30),
-          splashColor: Colors.white.withOpacity(0.08),
-          highlightColor: Colors.white.withOpacity(0.04),
-          onTap: onTap,
-          child: const SizedBox.expand(),
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: onTap,
+        child: Container(
+          decoration: HomeScreen._showTapAreas
+              ? BoxDecoration(
+                  color: debugColor.withOpacity(0.25),
+                  border: Border.all(
+                    color: debugColor,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(26),
+                )
+              : null,
         ),
       ),
     );

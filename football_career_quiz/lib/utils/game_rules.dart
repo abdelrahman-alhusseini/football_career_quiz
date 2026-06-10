@@ -7,14 +7,6 @@ class GameRules {
     required int revealedClubs,
     required bool isCareerFullyRevealed,
   }) {
-    if (revealedClubs <= 1) {
-      return 3;
-    }
-
-    if (totalClubs > 8 && revealedClubs <= 2) {
-      return 3;
-    }
-
     if (isCareerFullyRevealed) {
       return 1;
     }
