@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/private_match_provider.dart';
-import '../utils/app_theme.dart';
 import '../widgets/career_timeline.dart';
 import '../widgets/pitch_background.dart';
 
@@ -16,6 +15,20 @@ class PrivateMatchGameScreen extends StatefulWidget {
 
   @override
   State<PrivateMatchGameScreen> createState() => _PrivateMatchGameScreenState();
+}
+
+class _PMStyle {
+  static const Color premiumGold = Color(0xFFD9A441);
+  static const Color softGold = Color(0xFFFFD36A);
+  static const Color deepGold = Color(0xFF8F641D);
+  static const Color premiumBlue = Color(0xFF2D8CFF);
+  static const Color cardBlack = Color(0xEE050910);
+  static const Color cardDark = Color(0xEE08111D);
+  static const Color silverText = Color(0xFFF1F4FA);
+  static const Color mutedSilver = Color(0xFFB8C2D1);
+  static const Color border = Color(0xFF1D3553);
+  static const Color dangerRed = Color(0xFFFF6B6B);
+  static const Color successGold = Color(0xFFFFD36A);
 }
 
 class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
@@ -115,7 +128,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
 
     _centerMessageOpen = true;
 
-    final color = isPositive ? AppTheme.pitchGreen : Colors.redAccent;
+    final color = isPositive ? _PMStyle.successGold : _PMStyle.dangerRed;
 
     showGeneralDialog<void>(
       context: context,
@@ -130,7 +143,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
               width: 300,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
               decoration: BoxDecoration(
-                color: const Color(0xFF02101F).withOpacity(0.95),
+                color: const Color(0xFF050910).withOpacity(0.95),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
                   color: color.withOpacity(0.75),
@@ -171,7 +184,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: AppTheme.text,
+                      color: _PMStyle.silverText,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       height: 1.35,
@@ -243,14 +256,14 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
     final normalized = status.trim().toLowerCase();
 
     if (normalized == 'active' || normalized == 'current') {
-      return AppTheme.pitchGreen;
+      return _PMStyle.premiumGold;
     }
 
     if (normalized == 'retired') {
-      return AppTheme.gold;
+      return _PMStyle.softGold;
     }
 
-    return AppTheme.subText;
+    return _PMStyle.mutedSilver;
   }
 
   @override
@@ -295,7 +308,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
 
               if (player == null) {
                 return const Center(
-                  child: CircularProgressIndicator(color: AppTheme.accent),
+                  child: CircularProgressIndicator(color: _PMStyle.softGold),
                 );
               }
 
@@ -337,7 +350,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                   const Text(
                                     'Private Match',
                                     style: TextStyle(
-                                      color: AppTheme.text,
+                                      color: _PMStyle.silverText,
                                       fontSize: 23,
                                       fontWeight: FontWeight.w900,
                                     ),
@@ -345,7 +358,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                   Text(
                                     'Room: ${match.roomCode}',
                                     style: const TextStyle(
-                                      color: AppTheme.subText,
+                                      color: _PMStyle.mutedSilver,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -367,14 +380,14 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                               label: match.me?.displayName ?? 'You',
                               score: match.myFormattedScore,
                               icon: Icons.person_rounded,
-                              color: AppTheme.pitchGreen,
+                              color: _PMStyle.premiumGold,
                             ),
                             const SizedBox(width: 10),
                             _ScoreCard(
                               label: match.opponent?.displayName ?? 'Friend',
                               score: match.opponentFormattedScore,
                               icon: Icons.group_rounded,
-                              color: AppTheme.gold,
+                              color: _PMStyle.softGold,
                             ),
                           ],
                         ),
@@ -387,9 +400,9 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                             padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(28),
-                              color: const Color(0xFF02101F).withOpacity(0.45),
+                              color: _PMStyle.cardBlack.withOpacity(0.52),
                               border: Border.all(
-                                color: AppTheme.stadiumBlue.withOpacity(0.34),
+                                color: _PMStyle.premiumBlue.withOpacity(0.34),
                                 width: 1.2,
                               ),
                             ),
@@ -406,7 +419,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                         child: Text(
                                           'Guess the Player',
                                           style: TextStyle(
-                                            color: AppTheme.text,
+                                            color: _PMStyle.silverText,
                                             fontSize: 21,
                                             fontWeight: FontWeight.w900,
                                           ),
@@ -441,7 +454,7 @@ class _PrivateMatchGameScreenState extends State<PrivateMatchGameScreen> {
                                     const Text(
                                       'Next round will start automatically...',
                                       style: TextStyle(
-                                        color: AppTheme.subText,
+                                        color: _PMStyle.mutedSilver,
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -738,15 +751,15 @@ class _AnswerRevealBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: AppTheme.gold.withOpacity(0.13),
+        color: _PMStyle.softGold.withOpacity(0.13),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppTheme.gold.withOpacity(0.45),
+          color: _PMStyle.softGold.withOpacity(0.45),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.gold.withOpacity(0.10),
+            color: _PMStyle.softGold.withOpacity(0.10),
             blurRadius: 18,
             spreadRadius: 1,
           ),
@@ -758,14 +771,14 @@ class _AnswerRevealBox extends StatelessWidget {
             match.roundEndReason == 'correct'
                 ? Icons.check_circle_rounded
                 : Icons.info_rounded,
-            color: AppTheme.gold,
+            color: _PMStyle.softGold,
             size: 32,
           ),
           const SizedBox(height: 8),
           Text(
             title,
             style: const TextStyle(
-              color: AppTheme.gold,
+              color: _PMStyle.softGold,
               fontSize: 13,
               fontWeight: FontWeight.w900,
             ),
@@ -775,7 +788,7 @@ class _AnswerRevealBox extends StatelessWidget {
             name,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: AppTheme.text,
+              color: _PMStyle.silverText,
               fontSize: 23,
               fontWeight: FontWeight.w900,
               height: 1.15,
@@ -785,7 +798,7 @@ class _AnswerRevealBox extends StatelessWidget {
           const Text(
             'Next round starting...',
             style: TextStyle(
-              color: AppTheme.subText,
+              color: _PMStyle.mutedSilver,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -861,23 +874,23 @@ class _TimerHeaderState extends State<_TimerHeader> {
 
     final timeColor = remaining != null && remaining <= 10
         ? Colors.redAccent
-        : AppTheme.pitchGreen;
+        : _PMStyle.premiumGold;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF02101F).withOpacity(0.72),
+        color: _PMStyle.cardBlack.withOpacity(0.78),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.stadiumBlue.withOpacity(0.35),
+          color: _PMStyle.premiumBlue.withOpacity(0.35),
         ),
       ),
       child: Row(
         children: [
           const Icon(
             Icons.sports_soccer_rounded,
-            color: AppTheme.accent,
+            color: _PMStyle.softGold,
             size: 19,
           ),
           const SizedBox(width: 8),
@@ -885,7 +898,7 @@ class _TimerHeaderState extends State<_TimerHeader> {
             child: Text(
               'Round ${widget.match.currentRound}/${widget.match.totalRounds}',
               style: const TextStyle(
-                color: AppTheme.text,
+                color: _PMStyle.silverText,
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
               ),
@@ -954,7 +967,7 @@ class _RoundMessageState extends State<_RoundMessage> {
     return Text(
       message,
       style: const TextStyle(
-        color: AppTheme.subText,
+        color: _PMStyle.mutedSilver,
         fontSize: 12.5,
         fontWeight: FontWeight.w600,
         height: 1.35,
@@ -1075,12 +1088,12 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF02101F).withOpacity(0.88),
+        color: _PMStyle.cardBlack.withOpacity(0.92),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: canSubmit
-              ? AppTheme.pitchGreen.withOpacity(0.55)
-              : AppTheme.border.withOpacity(0.8),
+              ? _PMStyle.premiumGold.withOpacity(0.55)
+              : _PMStyle.border.withOpacity(0.8),
           width: 1.2,
         ),
         boxShadow: [
@@ -1098,10 +1111,10 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
             Container(
               constraints: const BoxConstraints(maxHeight: 190),
               decoration: BoxDecoration(
-                color: const Color(0xFF061B30).withOpacity(0.98),
+                color: _PMStyle.cardDark.withOpacity(0.98),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppTheme.stadiumBlue.withOpacity(0.38),
+                  color: _PMStyle.premiumBlue.withOpacity(0.38),
                 ),
               ),
               child: ListView.separated(
@@ -1110,7 +1123,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                 itemCount: _suggestions.length,
                 separatorBuilder: (_, __) => Divider(
                   height: 1,
-                  color: AppTheme.stadiumBlue.withOpacity(0.18),
+                  color: _PMStyle.premiumBlue.withOpacity(0.18),
                 ),
                 itemBuilder: (context, index) {
                   final suggestion = _suggestions[index];
@@ -1129,7 +1142,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                           children: [
                             const Icon(
                               Icons.search_rounded,
-                              color: AppTheme.gold,
+                              color: _PMStyle.softGold,
                               size: 18,
                             ),
                             const SizedBox(width: 10),
@@ -1137,7 +1150,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                               child: Text(
                                 suggestion,
                                 style: const TextStyle(
-                                  color: AppTheme.text,
+                                  color: _PMStyle.silverText,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -1145,7 +1158,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                             ),
                             const Icon(
                               Icons.touch_app_rounded,
-                              color: AppTheme.subText,
+                              color: _PMStyle.mutedSilver,
                               size: 16,
                             ),
                           ],
@@ -1167,7 +1180,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                   enabled: canSubmit,
                   onSubmitted: (_) => widget.onSubmit(),
                   style: const TextStyle(
-                    color: AppTheme.text,
+                    color: _PMStyle.silverText,
                     fontWeight: FontWeight.w800,
                   ),
                   decoration: InputDecoration(
@@ -1196,10 +1209,10 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                 child: ElevatedButton(
                   onPressed: canSubmit ? widget.onSubmit : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.pitchGreen,
-                    foregroundColor: const Color(0xFF02100A),
-                    disabledBackgroundColor: AppTheme.border,
-                    disabledForegroundColor: AppTheme.subText,
+                    backgroundColor: _PMStyle.premiumGold,
+                    foregroundColor: const Color(0xFF05070B),
+                    disabledBackgroundColor: _PMStyle.border,
+                    disabledForegroundColor: _PMStyle.mutedSilver,
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -1220,7 +1233,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                       '${widget.match.myWrongAttempts}/${PrivateMatchProvider.maxWrongAttempts}',
                   color: widget.match.attemptsLeft <= 1
                       ? Colors.redAccent
-                      : AppTheme.gold,
+                      : _PMStyle.softGold,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1230,7 +1243,7 @@ class _AnswerSearchInputState extends State<_AnswerSearchInput> {
                   value: '${widget.match.attemptsLeft}',
                   color: widget.match.attemptsLeft <= 1
                       ? Colors.redAccent
-                      : AppTheme.pitchGreen,
+                      : _PMStyle.premiumGold,
                 ),
               ),
             ],
@@ -1276,18 +1289,18 @@ class _HintPanel extends StatelessWidget {
       barrierDismissible: true,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF061B30),
+          backgroundColor: const Color(0xFF07101B),
           title: const Text(
             'Use Hint?',
             style: TextStyle(
-              color: AppTheme.gold,
+              color: _PMStyle.softGold,
               fontWeight: FontWeight.w900,
             ),
           ),
           content: Text(
             warning!,
             style: const TextStyle(
-              color: AppTheme.text,
+              color: _PMStyle.silverText,
               fontWeight: FontWeight.w700,
               height: 1.35,
             ),
@@ -1300,8 +1313,8 @@ class _HintPanel extends StatelessWidget {
             ElevatedButton(
               onPressed: () => Navigator.pop(dialogContext, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.gold,
-                foregroundColor: const Color(0xFF02101F),
+                backgroundColor: _PMStyle.softGold,
+                foregroundColor: const Color(0xFF050910),
               ),
               child: const Text(
                 'Yes, use it',
@@ -1336,10 +1349,10 @@ class _HintPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.gold.withOpacity(0.08),
+        color: _PMStyle.softGold.withOpacity(0.08),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppTheme.gold.withOpacity(0.26),
+          color: _PMStyle.softGold.withOpacity(0.26),
         ),
       ),
       child: Column(
@@ -1348,7 +1361,7 @@ class _HintPanel extends StatelessWidget {
           const Text(
             'Shared Hints',
             style: TextStyle(
-              color: AppTheme.gold,
+              color: _PMStyle.softGold,
               fontSize: 14,
               fontWeight: FontWeight.w900,
             ),
@@ -1357,7 +1370,7 @@ class _HintPanel extends StatelessWidget {
           Text(
             penaltyText,
             style: const TextStyle(
-              color: AppTheme.subText,
+              color: _PMStyle.mutedSilver,
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
             ),
@@ -1370,7 +1383,7 @@ class _HintPanel extends StatelessWidget {
                     child: Text(
                       'Hint ${entry.key + 1}: ${entry.value}',
                       style: const TextStyle(
-                        color: AppTheme.text,
+                        color: _PMStyle.silverText,
                         fontSize: 12.2,
                         fontWeight: FontWeight.w800,
                         height: 1.3,
@@ -1384,7 +1397,7 @@ class _HintPanel extends StatelessWidget {
             const Text(
               'Hint requested. Waiting for your friend to accept.',
               style: TextStyle(
-                color: AppTheme.gold,
+                color: _PMStyle.softGold,
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
               ),
@@ -1396,8 +1409,8 @@ class _HintPanel extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => _acceptHint(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.pitchGreen,
-                      foregroundColor: const Color(0xFF02100A),
+                      backgroundColor: _PMStyle.premiumGold,
+                      foregroundColor: const Color(0xFF05070B),
                     ),
                     child: const Text(
                       'Accept Hint',
@@ -1433,10 +1446,10 @@ class _HintPanel extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.w900),
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.gold,
-                  disabledForegroundColor: AppTheme.subText,
+                  foregroundColor: _PMStyle.softGold,
+                  disabledForegroundColor: _PMStyle.mutedSilver,
                   side: BorderSide(
-                    color: AppTheme.gold.withOpacity(0.35),
+                    color: _PMStyle.softGold.withOpacity(0.35),
                   ),
                 ),
               ),
@@ -1520,16 +1533,16 @@ class _RoundStatusBoxState extends State<_RoundStatusBox> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.stadiumBlue.withOpacity(0.08),
+        color: _PMStyle.premiumBlue.withOpacity(0.08),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppTheme.stadiumBlue.withOpacity(0.25),
+          color: _PMStyle.premiumBlue.withOpacity(0.25),
         ),
       ),
       child: Text(
         text,
         style: const TextStyle(
-          color: AppTheme.text,
+          color: _PMStyle.silverText,
           fontSize: 12.5,
           fontWeight: FontWeight.w800,
           height: 1.35,
@@ -1555,19 +1568,19 @@ class _FeedbackBox extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: correct
-            ? AppTheme.pitchGreen.withOpacity(0.12)
+            ? _PMStyle.premiumGold.withOpacity(0.12)
             : Colors.red.withOpacity(0.12),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: correct
-              ? AppTheme.pitchGreen.withOpacity(0.35)
+              ? _PMStyle.premiumGold.withOpacity(0.35)
               : Colors.red.withOpacity(0.35),
         ),
       ),
       child: Text(
         match.feedbackMessage ?? '',
         style: TextStyle(
-          color: correct ? AppTheme.pitchGreen : const Color(0xFFFFB3B3),
+          color: correct ? _PMStyle.premiumGold : const Color(0xFFFFB3B3),
           fontSize: 12.5,
           fontWeight: FontWeight.w900,
         ),
@@ -1611,10 +1624,10 @@ class _WaitingRoomView extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: const Color(0xFF02101F).withOpacity(0.72),
+              color: _PMStyle.cardBlack.withOpacity(0.78),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: AppTheme.gold.withOpacity(0.42),
+                color: _PMStyle.softGold.withOpacity(0.42),
               ),
             ),
             child: Column(
@@ -1622,14 +1635,14 @@ class _WaitingRoomView extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.group_add_rounded,
-                  color: AppTheme.gold,
+                  color: _PMStyle.softGold,
                   size: 54,
                 ),
                 const SizedBox(height: 14),
                 const Text(
                   'Waiting for Friend',
                   style: TextStyle(
-                    color: AppTheme.text,
+                    color: _PMStyle.silverText,
                     fontSize: 25,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1639,7 +1652,7 @@ class _WaitingRoomView extends StatelessWidget {
                   'Send this room code to your friend.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppTheme.subText,
+                    color: _PMStyle.mutedSilver,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1649,17 +1662,17 @@ class _WaitingRoomView extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: AppTheme.gold.withOpacity(0.12),
+                    color: _PMStyle.softGold.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppTheme.gold.withOpacity(0.45),
+                      color: _PMStyle.softGold.withOpacity(0.45),
                     ),
                   ),
                   child: Text(
                     roomCode,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: AppTheme.gold,
+                      color: _PMStyle.softGold,
                       fontSize: 34,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 5,
@@ -1675,12 +1688,12 @@ class _WaitingRoomView extends StatelessWidget {
                     _SmallChip(
                       text: difficultyLabel,
                       icon: Icons.speed_rounded,
-                      color: AppTheme.accent,
+                      color: _PMStyle.softGold,
                     ),
                     _SmallChip(
                       text: unlimitedTime ? 'Unlimited' : '90 seconds',
                       icon: Icons.timer_rounded,
-                      color: AppTheme.pitchGreen,
+                      color: _PMStyle.premiumGold,
                     ),
                   ],
                 ),
@@ -1692,8 +1705,8 @@ class _WaitingRoomView extends StatelessWidget {
                     icon: const Icon(Icons.copy_rounded),
                     label: const Text('Copy Code'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.pitchGreen,
-                      foregroundColor: const Color(0xFF02100A),
+                      backgroundColor: _PMStyle.premiumGold,
+                      foregroundColor: const Color(0xFF05070B),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
@@ -1704,7 +1717,15 @@ class _WaitingRoomView extends StatelessWidget {
                 const SizedBox(height: 10),
                 TextButton(
                   onPressed: onBack,
-                  child: const Text('Leave Room'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Color(0xFFFFD36A),
+                  ),
+                  child: const Text(
+                    'Leave Room',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1748,10 +1769,10 @@ class _PrivateResultView extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: const Color(0xFF02101F).withOpacity(0.72),
+              color: _PMStyle.cardBlack.withOpacity(0.78),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: AppTheme.gold.withOpacity(0.42),
+                color: _PMStyle.softGold.withOpacity(0.42),
               ),
             ),
             child: Column(
@@ -1759,14 +1780,14 @@ class _PrivateResultView extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.emoji_events_rounded,
-                  color: AppTheme.gold,
+                  color: _PMStyle.softGold,
                   size: 56,
                 ),
                 const SizedBox(height: 14),
                 Text(
                   title,
                   style: const TextStyle(
-                    color: AppTheme.text,
+                    color: _PMStyle.silverText,
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1776,14 +1797,14 @@ class _PrivateResultView extends StatelessWidget {
                   name: me?.displayName ?? 'You',
                   score: me?.formattedScore ?? '0',
                   label: 'You',
-                  color: AppTheme.pitchGreen,
+                  color: _PMStyle.premiumGold,
                 ),
                 const SizedBox(height: 10),
                 _ResultPlayerRow(
                   name: opponent?.displayName ?? 'Friend',
                   score: opponent?.formattedScore ?? '0',
                   label: 'Friend',
-                  color: AppTheme.gold,
+                  color: _PMStyle.softGold,
                 ),
                 const SizedBox(height: 22),
                 SizedBox(
@@ -1797,8 +1818,8 @@ class _PrivateResultView extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.pitchGreen,
-                      foregroundColor: const Color(0xFF02100A),
+                      backgroundColor: _PMStyle.premiumGold,
+                      foregroundColor: const Color(0xFF05070B),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
@@ -1858,7 +1879,7 @@ class _SmallInfoBox extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: AppTheme.subText,
+              color: _PMStyle.mutedSilver,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
@@ -1889,7 +1910,7 @@ class _ScoreCard extends StatelessWidget {
         height: 62,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF02101F).withOpacity(0.72),
+          color: _PMStyle.cardBlack.withOpacity(0.78),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: color.withOpacity(0.35),
@@ -1909,7 +1930,7 @@ class _ScoreCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: AppTheme.text,
+                  color: _PMStyle.silverText,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w800,
                 ),
@@ -1971,7 +1992,7 @@ class _ResultPlayerRow extends StatelessWidget {
             child: Text(
               name,
               style: const TextStyle(
-                color: AppTheme.text,
+                color: _PMStyle.silverText,
                 fontSize: 15,
                 fontWeight: FontWeight.w900,
               ),
@@ -2051,10 +2072,10 @@ class _CircleIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF02101F).withOpacity(0.72),
+      color: _PMStyle.cardBlack.withOpacity(0.78),
       shape: CircleBorder(
         side: BorderSide(
-          color: AppTheme.stadiumBlue.withOpacity(0.42),
+          color: _PMStyle.premiumBlue.withOpacity(0.42),
           width: 1.1,
         ),
       ),
@@ -2066,7 +2087,7 @@ class _CircleIconButton extends StatelessWidget {
           height: 42,
           child: Icon(
             icon,
-            color: AppTheme.text,
+            color: _PMStyle.silverText,
             size: 24,
           ),
         ),
@@ -2099,10 +2120,10 @@ class _MessageView extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: const Color(0xFF02101F).withOpacity(0.72),
+              color: _PMStyle.cardBlack.withOpacity(0.78),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: AppTheme.stadiumBlue.withOpacity(0.35),
+                color: _PMStyle.premiumBlue.withOpacity(0.35),
               ),
             ),
             child: Column(
@@ -2112,7 +2133,7 @@ class _MessageView extends StatelessWidget {
                   title,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: AppTheme.text,
+                    color: _PMStyle.silverText,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                   ),
@@ -2122,7 +2143,7 @@ class _MessageView extends StatelessWidget {
                   message,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: AppTheme.subText,
+                    color: _PMStyle.mutedSilver,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2133,8 +2154,8 @@ class _MessageView extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onPressed,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.pitchGreen,
-                      foregroundColor: const Color(0xFF02100A),
+                      backgroundColor: _PMStyle.premiumGold,
+                      foregroundColor: const Color(0xFF05070B),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(buttonText),

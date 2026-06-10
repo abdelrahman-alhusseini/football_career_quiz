@@ -728,13 +728,53 @@ class PrivateMatchProvider extends ChangeNotifier {
         return;
       }
 
-      await _supabase.from('private_room_players').upsert({
-        'room_code': normalizedCode,
-        'user_id': userId,
-        'display_name': displayName,
-        'score': 0,
-        'correct_answers': 0,
-      });
+      final alreadyInRoom = await _supabase
+          .from('private_room_players')
+          .select()
+          .eq('room_code', normalizedCode)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (alreadyInRoom == null) {
+        try {
+          await _supabase.from('private_room_players').insert({
+            'room_code': normalizedCode,
+            'user_id': userId,
+            'display_name': displayName,
+            'score': 0,
+            'correct_answers': 0,
+          });
+        } catch (e) {
+          final errorText = e.toString().toLowerCase();
+
+          if (errorText.contains('duplicate key') ||
+              errorText.contains('23505') ||
+              errorText
+                  .contains('private_room_players_room_code_user_id_key')) {
+            // This can happen if the user double-clicks Join or refreshes fast.
+            // In that case, silently reuse the existing player row.
+            await _supabase
+                .from('private_room_players')
+                .update({
+                  'display_name': displayName,
+                })
+                .eq('room_code', normalizedCode)
+                .eq('user_id', userId);
+          } else {
+            rethrow;
+          }
+        }
+      } else {
+        // Rejoining the same room should not reset score/correct answers.
+        // Only update the display name.
+        await _supabase
+            .from('private_room_players')
+            .update({
+              'display_name': displayName,
+            })
+            .eq('room_code', normalizedCode)
+            .eq('user_id', userId);
+      }
 
       final updateData = <String, dynamic>{};
 
@@ -764,7 +804,21 @@ class PrivateMatchProvider extends ChangeNotifier {
       await _refreshRoom();
       _startPolling();
     } catch (e) {
-      errorMessage = 'Could not join room: $e';
+      final errorText = e.toString().toLowerCase();
+
+      if (errorText.contains('duplicate key') ||
+          errorText.contains('23505') ||
+          errorText.contains('private_room_players_room_code_user_id_key')) {
+        // Final safety net: user should never see the raw Supabase duplicate key.
+        roomCode = normalizedCode;
+        await _saveSession();
+        await _refreshRoom();
+        _startPolling();
+        errorMessage = null;
+      } else {
+        errorMessage =
+            'Could not join room. Please check the code and try again.';
+      }
     }
 
     isLoading = false;

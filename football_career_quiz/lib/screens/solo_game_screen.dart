@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../models/player_model.dart';
 import '../providers/game_provider.dart';
 import '../repositories/player_repository.dart';
-import '../utils/app_theme.dart';
 import '../utils/game_rules.dart';
 import '../widgets/career_timeline.dart';
 import '../widgets/pitch_background.dart';
@@ -18,6 +17,20 @@ class SoloGameScreen extends StatefulWidget {
 
   @override
   State<SoloGameScreen> createState() => _SoloGameScreenState();
+}
+
+class _SoloStyle {
+  static const Color premiumGold = Color(0xFFD9A441);
+  static const Color softGold = Color(0xFFFFD36A);
+  static const Color deepGold = Color(0xFF8F641D);
+  static const Color premiumBlue = Color(0xFF2D8CFF);
+  static const Color cardBlack = Color(0xEE050910);
+  static const Color cardDark = Color(0xEE08111D);
+  static const Color silverText = Color(0xFFF1F4FA);
+  static const Color mutedSilver = Color(0xFFB8C2D1);
+  static const Color border = Color(0xFF1D3553);
+  static const Color dangerRed = Color(0xFFFF6B6B);
+  static const Color successGold = Color(0xFFFFD36A);
 }
 
 class _SoloGameScreenState extends State<SoloGameScreen> {
@@ -146,7 +159,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
 
     _centerMessageOpen = true;
 
-    final color = isPositive ? AppTheme.pitchGreen : Colors.redAccent;
+    final color = isPositive ? _SoloStyle.successGold : _SoloStyle.dangerRed;
 
     showGeneralDialog<void>(
       context: context,
@@ -161,7 +174,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
               width: 300,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
               decoration: BoxDecoration(
-                color: const Color(0xFF02101F).withOpacity(0.95),
+                color: const Color(0xFF050910).withOpacity(0.95),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: color.withOpacity(0.75), width: 1.8),
                 boxShadow: [
@@ -199,7 +212,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: AppTheme.text,
+                      color: _SoloStyle.silverText,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       height: 1.35,
@@ -357,7 +370,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
 
               if (game.isLoading) {
                 return const Center(
-                  child: CircularProgressIndicator(color: AppTheme.accent),
+                  child: CircularProgressIndicator(color: _SoloStyle.softGold),
                 );
               }
 
@@ -370,7 +383,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                   child: Text(
                     'No players found.',
                     style: TextStyle(
-                      color: AppTheme.text,
+                      color: _SoloStyle.silverText,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
@@ -413,7 +426,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                     return const Text(
                                       'Career Guess',
                                       style: TextStyle(
-                                        color: AppTheme.text,
+                                        color: _SoloStyle.silverText,
                                         fontSize: 23,
                                         fontWeight: FontWeight.w900,
                                       ),
@@ -435,7 +448,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                             _TopInfoCard(
                               label: 'Score',
                               value: game.formattedScore,
-                              valueColor: AppTheme.gold,
+                              valueColor: _SoloStyle.softGold,
                               icon: Icons.emoji_events_rounded,
                             ),
                             const SizedBox(width: 10),
@@ -443,7 +456,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                               label: 'Round',
                               value:
                                   '${game.currentRound}/${GameRules.totalRounds}',
-                              valueColor: AppTheme.accent,
+                              valueColor: _SoloStyle.softGold,
                               icon: Icons.sports_soccer_rounded,
                             ),
                           ],
@@ -455,9 +468,9 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                             padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(28),
-                              color: const Color(0xFF02101F).withOpacity(0.45),
+                              color: _SoloStyle.cardBlack.withOpacity(0.52),
                               border: Border.all(
-                                color: AppTheme.stadiumBlue.withOpacity(0.34),
+                                color: _SoloStyle.premiumBlue.withOpacity(0.34),
                                 width: 1.2,
                               ),
                               boxShadow: [
@@ -467,7 +480,8 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                   offset: const Offset(0, 14),
                                 ),
                                 BoxShadow(
-                                  color: AppTheme.stadiumBlue.withOpacity(0.08),
+                                  color:
+                                      _SoloStyle.premiumBlue.withOpacity(0.08),
                                   blurRadius: 30,
                                   offset: const Offset(0, 0),
                                 ),
@@ -491,11 +505,11 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                             SizedBox(width: 10),
                                             Expanded(
                                               child: Text(
-                                                'Guess',
+                                                'Guess the Player',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
-                                                  color: AppTheme.text,
+                                                  color: _SoloStyle.silverText,
                                                   fontSize: 21,
                                                   fontWeight: FontWeight.w900,
                                                   letterSpacing: -0.3,
@@ -555,14 +569,14 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                               : null,
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
-                                                AppTheme.pitchGreen,
+                                                _SoloStyle.premiumGold,
                                             foregroundColor: const Color(
                                               0xFF02100A,
                                             ),
                                             disabledBackgroundColor:
-                                                AppTheme.border,
+                                                _SoloStyle.border,
                                             disabledForegroundColor:
-                                                AppTheme.subText,
+                                                _SoloStyle.mutedSilver,
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 13,
                                             ),
@@ -586,9 +600,10 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                         child: OutlinedButton(
                                           onPressed: () => _goNextRound(game),
                                           style: OutlinedButton.styleFrom(
-                                            foregroundColor: AppTheme.text,
+                                            foregroundColor:
+                                                _SoloStyle.silverText,
                                             side: BorderSide(
-                                              color: AppTheme.stadiumBlue
+                                              color: _SoloStyle.premiumBlue
                                                   .withOpacity(0.38),
                                             ),
                                             padding: const EdgeInsets.symmetric(
@@ -622,12 +637,13 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                       width: double.infinity,
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.pitchGreen.withOpacity(
+                                        color:
+                                            _SoloStyle.premiumGold.withOpacity(
                                           0.13,
                                         ),
                                         borderRadius: BorderRadius.circular(18),
                                         border: Border.all(
-                                          color: AppTheme.pitchGreen
+                                          color: _SoloStyle.premiumGold
                                               .withOpacity(0.38),
                                         ),
                                       ),
@@ -635,7 +651,7 @@ class _SoloGameScreenState extends State<SoloGameScreen> {
                                         game.feedbackMessage!,
                                         style: const TextStyle(
                                           fontSize: 12.5,
-                                          color: AppTheme.pitchGreen,
+                                          color: _SoloStyle.premiumGold,
                                           fontWeight: FontWeight.w800,
                                         ),
                                       ),
@@ -829,11 +845,8 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
 
     FocusScope.of(context).unfocus();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      widget.onSelected(value);
-      _isSelectingSuggestion = false;
-    });
+    widget.onSelected(value);
+    _isSelectingSuggestion = false;
   }
 
   @override
@@ -847,12 +860,12 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF02101F).withOpacity(0.72),
+        color: _SoloStyle.cardBlack.withOpacity(0.78),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: widget.enabled
-              ? AppTheme.pitchGreen.withOpacity(0.45)
-              : AppTheme.border.withOpacity(0.8),
+              ? _SoloStyle.premiumGold.withOpacity(0.45)
+              : _SoloStyle.border.withOpacity(0.8),
         ),
       ),
       child: Column(
@@ -863,10 +876,10 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
               width: double.infinity,
               constraints: const BoxConstraints(maxHeight: 190),
               decoration: BoxDecoration(
-                color: const Color(0xFF061B30).withOpacity(0.98),
+                color: _SoloStyle.cardDark.withOpacity(0.98),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppTheme.stadiumBlue.withOpacity(0.38),
+                  color: _SoloStyle.premiumBlue.withOpacity(0.38),
                 ),
               ),
               child: ListView.separated(
@@ -876,7 +889,7 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
                 itemCount: _suggestions.length,
                 separatorBuilder: (_, __) => Divider(
                   height: 1,
-                  color: AppTheme.stadiumBlue.withOpacity(0.18),
+                  color: _SoloStyle.premiumBlue.withOpacity(0.18),
                 ),
                 itemBuilder: (context, index) {
                   final suggestion = _suggestions[index];
@@ -895,7 +908,7 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
                           children: [
                             const Icon(
                               Icons.search_rounded,
-                              color: AppTheme.gold,
+                              color: _SoloStyle.softGold,
                               size: 18,
                             ),
                             const SizedBox(width: 10),
@@ -903,7 +916,7 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
                               child: Text(
                                 suggestion,
                                 style: const TextStyle(
-                                  color: AppTheme.text,
+                                  color: _SoloStyle.silverText,
                                   fontSize: 13.2,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -911,7 +924,7 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
                             ),
                             const Icon(
                               Icons.touch_app_rounded,
-                              color: AppTheme.subText,
+                              color: _SoloStyle.mutedSilver,
                               size: 16,
                             ),
                           ],
@@ -930,7 +943,7 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
             enabled: widget.enabled,
             onSubmitted: (_) => widget.onSubmit(),
             style: const TextStyle(
-              color: AppTheme.text,
+              color: _SoloStyle.silverText,
               fontWeight: FontWeight.w800,
             ),
             decoration: InputDecoration(
@@ -967,7 +980,9 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
                 child: _AttemptMiniBox(
                   label: 'Wrong',
                   value: '${widget.wrongAttempts}/${widget.maxWrongAttempts}',
-                  color: attemptsLeft <= 1 ? Colors.redAccent : AppTheme.gold,
+                  color: attemptsLeft <= 1
+                      ? Colors.redAccent
+                      : _SoloStyle.softGold,
                 ),
               ),
               const SizedBox(width: 8),
@@ -977,7 +992,7 @@ class _SoloAnswerSearchBoxState extends State<_SoloAnswerSearchBox> {
                   value: '$attemptsLeft',
                   color: attemptsLeft <= 1
                       ? Colors.redAccent
-                      : AppTheme.pitchGreen,
+                      : _SoloStyle.premiumGold,
                 ),
               ),
             ],
@@ -1058,7 +1073,7 @@ class _AttemptMiniBox extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: AppTheme.subText,
+              color: _SoloStyle.mutedSilver,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
@@ -1090,13 +1105,13 @@ class _RoundInfoBlock extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: retired
-            ? AppTheme.gold.withOpacity(0.12)
-            : AppTheme.pitchGreen.withOpacity(0.12),
+            ? _SoloStyle.softGold.withOpacity(0.12)
+            : _SoloStyle.premiumGold.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: retired
-              ? AppTheme.gold.withOpacity(0.35)
-              : AppTheme.pitchGreen.withOpacity(0.35),
+              ? _SoloStyle.softGold.withOpacity(0.35)
+              : _SoloStyle.premiumGold.withOpacity(0.35),
         ),
       ),
       child: Row(
@@ -1104,14 +1119,14 @@ class _RoundInfoBlock extends StatelessWidget {
         children: [
           Icon(
             retired ? Icons.history_rounded : Icons.flash_on_rounded,
-            color: retired ? AppTheme.gold : AppTheme.pitchGreen,
+            color: retired ? _SoloStyle.softGold : _SoloStyle.premiumGold,
             size: 15,
           ),
           const SizedBox(width: 5),
           Text(
             game.currentPlayerStatusText,
             style: TextStyle(
-              color: retired ? AppTheme.gold : AppTheme.pitchGreen,
+              color: retired ? _SoloStyle.softGold : _SoloStyle.premiumGold,
               fontSize: 11.5,
               fontWeight: FontWeight.w900,
             ),
@@ -1157,18 +1172,18 @@ class _HintBox extends StatelessWidget {
         barrierDismissible: true,
         builder: (dialogContext) {
           return AlertDialog(
-            backgroundColor: const Color(0xFF061B30),
+            backgroundColor: const Color(0xFF07101B),
             title: const Text(
               'Use Hint?',
               style: TextStyle(
-                color: AppTheme.gold,
+                color: _SoloStyle.softGold,
                 fontWeight: FontWeight.w900,
               ),
             ),
             content: Text(
               warning!,
               style: const TextStyle(
-                color: AppTheme.text,
+                color: _SoloStyle.silverText,
                 fontWeight: FontWeight.w700,
                 height: 1.35,
               ),
@@ -1181,8 +1196,8 @@ class _HintBox extends StatelessWidget {
               ElevatedButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.gold,
-                  foregroundColor: const Color(0xFF02101F),
+                  backgroundColor: _SoloStyle.softGold,
+                  foregroundColor: const Color(0xFF050910),
                 ),
                 child: const Text(
                   'Yes, use it',
@@ -1221,9 +1236,10 @@ class _HintBox extends StatelessWidget {
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.gold,
-                  disabledForegroundColor: AppTheme.subText,
-                  side: BorderSide(color: AppTheme.gold.withOpacity(0.42)),
+                  foregroundColor: _SoloStyle.softGold,
+                  disabledForegroundColor: _SoloStyle.mutedSilver,
+                  side:
+                      BorderSide(color: _SoloStyle.softGold.withOpacity(0.42)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
@@ -1238,9 +1254,9 @@ class _HintBox extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.gold.withOpacity(0.10),
+            color: _SoloStyle.softGold.withOpacity(0.10),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppTheme.gold.withOpacity(0.35)),
+            border: Border.all(color: _SoloStyle.softGold.withOpacity(0.35)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1248,7 +1264,7 @@ class _HintBox extends StatelessWidget {
               Text(
                 _penaltyText(hintsUsed),
                 style: const TextStyle(
-                  color: AppTheme.gold,
+                  color: _SoloStyle.softGold,
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
                 ),
@@ -1261,7 +1277,7 @@ class _HintBox extends StatelessWidget {
                         child: Text(
                           'Hint ${entry.key + 1}: ${entry.value}',
                           style: const TextStyle(
-                            color: AppTheme.gold,
+                            color: _SoloStyle.softGold,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w800,
                           ),
@@ -1311,7 +1327,7 @@ class _FinalResultView extends StatelessWidget {
                         return const Text(
                           'Career Guess',
                           style: TextStyle(
-                            color: AppTheme.text,
+                            color: _SoloStyle.silverText,
                             fontSize: 25,
                             fontWeight: FontWeight.w900,
                           ),
@@ -1332,10 +1348,10 @@ class _FinalResultView extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF02101F).withOpacity(0.72),
+                          color: _SoloStyle.cardBlack.withOpacity(0.78),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
-                            color: AppTheme.gold.withOpacity(0.45),
+                            color: _SoloStyle.softGold.withOpacity(0.45),
                             width: 1.3,
                           ),
                         ),
@@ -1343,14 +1359,14 @@ class _FinalResultView extends StatelessWidget {
                           children: [
                             const Icon(
                               Icons.emoji_events_rounded,
-                              color: AppTheme.gold,
+                              color: _SoloStyle.softGold,
                               size: 52,
                             ),
                             const SizedBox(height: 14),
                             const Text(
                               'Final Results',
                               style: TextStyle(
-                                color: AppTheme.text,
+                                color: _SoloStyle.silverText,
                                 fontSize: 27,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -1359,7 +1375,7 @@ class _FinalResultView extends StatelessWidget {
                             Text(
                               'Rank: ${game.finalRank}',
                               style: const TextStyle(
-                                color: AppTheme.gold,
+                                color: _SoloStyle.softGold,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -1372,14 +1388,14 @@ class _FinalResultView extends StatelessWidget {
                                   value:
                                       '${game.formattedScore}/${game.formattedMaxScore}',
                                   icon: Icons.stars_rounded,
-                                  color: AppTheme.gold,
+                                  color: _SoloStyle.softGold,
                                 ),
                                 const SizedBox(width: 10),
                                 _ResultStatCard(
                                   label: 'Accuracy',
                                   value: '${game.finalAccuracyPercent}%',
                                   icon: Icons.track_changes_rounded,
-                                  color: AppTheme.pitchGreen,
+                                  color: _SoloStyle.premiumGold,
                                 ),
                               ],
                             ),
@@ -1390,14 +1406,14 @@ class _FinalResultView extends StatelessWidget {
                                   label: 'Correct',
                                   value: '${game.correctAnswers}',
                                   icon: Icons.check_circle_rounded,
-                                  color: AppTheme.pitchGreen,
+                                  color: _SoloStyle.premiumGold,
                                 ),
                                 const SizedBox(width: 10),
                                 _ResultStatCard(
                                   label: 'Skipped',
                                   value: '${game.skippedRounds}',
                                   icon: Icons.skip_next_rounded,
-                                  color: AppTheme.accent,
+                                  color: _SoloStyle.softGold,
                                 ),
                               ],
                             ),
@@ -1414,8 +1430,8 @@ class _FinalResultView extends StatelessWidget {
                             context.read<GameProvider>().startNewGame();
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.pitchGreen,
-                            foregroundColor: const Color(0xFF02100A),
+                            backgroundColor: _SoloStyle.premiumGold,
+                            foregroundColor: const Color(0xFF05070B),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -1439,9 +1455,9 @@ class _FinalResultView extends StatelessWidget {
                             Navigator.pop(context);
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.text,
+                            foregroundColor: _SoloStyle.silverText,
                             side: BorderSide(
-                              color: AppTheme.stadiumBlue.withOpacity(0.42),
+                              color: _SoloStyle.premiumBlue.withOpacity(0.42),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
@@ -1479,24 +1495,24 @@ class _MissedPlayersPanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF02101F).withOpacity(0.62),
+        color: const Color(0xFF050910).withOpacity(0.62),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: missedRounds.isEmpty
-              ? AppTheme.pitchGreen.withOpacity(0.35)
+              ? _SoloStyle.premiumGold.withOpacity(0.35)
               : Colors.red.withOpacity(0.28),
         ),
       ),
       child: ExpansionTile(
         initiallyExpanded: missedRounds.isNotEmpty,
-        iconColor: AppTheme.text,
-        collapsedIconColor: AppTheme.text,
+        iconColor: _SoloStyle.silverText,
+        collapsedIconColor: _SoloStyle.silverText,
         title: Text(
           missedRounds.isEmpty
               ? 'No missed players'
               : 'Players you missed (${missedRounds.length})',
           style: const TextStyle(
-            color: AppTheme.text,
+            color: _SoloStyle.silverText,
             fontSize: 15,
             fontWeight: FontWeight.w900,
           ),
@@ -1506,7 +1522,7 @@ class _MissedPlayersPanel extends StatelessWidget {
               ? 'Perfect — you knew every player.'
               : 'Open this to review the names and careers.',
           style: const TextStyle(
-            color: AppTheme.subText,
+            color: _SoloStyle.mutedSilver,
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
           ),
@@ -1517,7 +1533,7 @@ class _MissedPlayersPanel extends StatelessWidget {
             const Text(
               'Great job. You did not skip any player.',
               style: TextStyle(
-                color: AppTheme.pitchGreen,
+                color: _SoloStyle.premiumGold,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
               ),
@@ -1558,7 +1574,7 @@ class _MissedPlayerCard extends StatelessWidget {
           Text(
             '$index. ${review.playerName}',
             style: const TextStyle(
-              color: AppTheme.text,
+              color: _SoloStyle.silverText,
               fontSize: 15,
               fontWeight: FontWeight.w900,
             ),
@@ -1600,7 +1616,7 @@ class _MissedPlayerCard extends StatelessWidget {
             Text(
               clubPath,
               style: const TextStyle(
-                color: AppTheme.subText,
+                color: _SoloStyle.mutedSilver,
                 fontSize: 11.8,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
@@ -1624,19 +1640,19 @@ class _SmallReviewChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.stadiumBlue.withOpacity(0.10),
+        color: _SoloStyle.premiumBlue.withOpacity(0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppTheme.stadiumBlue.withOpacity(0.22)),
+        border: Border.all(color: _SoloStyle.premiumBlue.withOpacity(0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppTheme.accent, size: 13),
+          Icon(icon, color: _SoloStyle.softGold, size: 13),
           const SizedBox(width: 4),
           Text(
             text,
             style: const TextStyle(
-              color: AppTheme.text,
+              color: _SoloStyle.silverText,
               fontSize: 10.8,
               fontWeight: FontWeight.w800,
             ),
@@ -1689,7 +1705,7 @@ class _ResultStatCard extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                color: AppTheme.subText,
+                color: _SoloStyle.mutedSilver,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 height: 1,
@@ -1722,10 +1738,10 @@ class _TopInfoCard extends StatelessWidget {
         height: 58,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF02101F).withOpacity(0.72),
+          color: _SoloStyle.cardBlack.withOpacity(0.78),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.stadiumBlue.withOpacity(0.42),
+            color: _SoloStyle.premiumBlue.withOpacity(0.42),
             width: 1.1,
           ),
         ),
@@ -1740,7 +1756,7 @@ class _TopInfoCard extends StatelessWidget {
                 Text(
                   label,
                   style: const TextStyle(
-                    color: AppTheme.text,
+                    color: _SoloStyle.silverText,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     height: 1,
@@ -1774,10 +1790,10 @@ class _CircleIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF02101F).withOpacity(0.72),
+      color: _SoloStyle.cardBlack.withOpacity(0.78),
       shape: CircleBorder(
         side: BorderSide(
-          color: AppTheme.stadiumBlue.withOpacity(0.42),
+          color: _SoloStyle.premiumBlue.withOpacity(0.42),
           width: 1.1,
         ),
       ),
@@ -1787,7 +1803,7 @@ class _CircleIconButton extends StatelessWidget {
         child: SizedBox(
           width: 42,
           height: 42,
-          child: Icon(icon, color: AppTheme.text, size: 24),
+          child: Icon(icon, color: _SoloStyle.silverText, size: 24),
         ),
       ),
     );
@@ -1804,15 +1820,15 @@ class _GlowingTargetIcon extends StatelessWidget {
       height: 34,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppTheme.pitchGreen.withOpacity(0.14),
+        color: _SoloStyle.premiumGold.withOpacity(0.14),
         border: Border.all(
-          color: AppTheme.pitchGreen.withOpacity(0.58),
+          color: _SoloStyle.premiumGold.withOpacity(0.58),
           width: 1.2,
         ),
       ),
       child: const Icon(
         Icons.track_changes_rounded,
-        color: AppTheme.pitchGreen,
+        color: _SoloStyle.premiumGold,
         size: 22,
       ),
     );
@@ -1829,14 +1845,14 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.pitchGreen.withOpacity(0.12),
+        color: _SoloStyle.premiumGold.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppTheme.pitchGreen.withOpacity(0.35)),
+        border: Border.all(color: _SoloStyle.premiumGold.withOpacity(0.35)),
       ),
       child: Text(
         text,
         style: const TextStyle(
-          color: AppTheme.pitchGreen,
+          color: _SoloStyle.premiumGold,
           fontSize: 10.5,
           fontWeight: FontWeight.w800,
         ),
