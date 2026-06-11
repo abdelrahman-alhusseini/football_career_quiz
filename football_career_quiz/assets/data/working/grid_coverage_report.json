@@ -1,0 +1,1181 @@
+{
+  "playerCount": 1400,
+  "categoryCount": 1215,
+  "axisCategoryCount": 1215,
+  "viablePairCountAtLegendMinimum": 18830,
+  "viablePairCountsByDifficulty": {
+    "casual": 499,
+    "rising_star": 1017,
+    "pro": 2313,
+    "elite": 4629,
+    "legend": 18830
+  },
+  "categoryCountsByType": {
+    "position_group": 4,
+    "club": 1124,
+    "nationality": 87
+  },
+  "topCategories": [
+    {
+      "id": "position_group:forward",
+      "type": "position_group",
+      "label": "Forward",
+      "count": 584
+    },
+    {
+      "id": "position_group:midfielder",
+      "type": "position_group",
+      "label": "Midfielder",
+      "count": 544
+    },
+    {
+      "id": "position_group:defender",
+      "type": "position_group",
+      "label": "Defender",
+      "count": 364
+    },
+    {
+      "id": "club:chelsea",
+      "type": "club",
+      "label": "Chelsea",
+      "count": 136
+    },
+    {
+      "id": "nationality:france",
+      "type": "nationality",
+      "label": "France",
+      "count": 135
+    },
+    {
+      "id": "nationality:england",
+      "type": "nationality",
+      "label": "England",
+      "count": 131
+    },
+    {
+      "id": "nationality:brazil",
+      "type": "nationality",
+      "label": "Brazil",
+      "count": 130
+    },
+    {
+      "id": "club:real_madrid",
+      "type": "club",
+      "label": "Real Madrid",
+      "count": 126
+    },
+    {
+      "id": "club:barcelona",
+      "type": "club",
+      "label": "Barcelona",
+      "count": 124
+    },
+    {
+      "id": "nationality:spain",
+      "type": "nationality",
+      "label": "Spain",
+      "count": 122
+    },
+    {
+      "id": "club:inter_milan",
+      "type": "club",
+      "label": "Inter Milan",
+      "count": 119
+    },
+    {
+      "id": "club:ac_milan",
+      "type": "club",
+      "label": "AC Milan",
+      "count": 116
+    },
+    {
+      "id": "club:juventus",
+      "type": "club",
+      "label": "Juventus",
+      "count": 113
+    },
+    {
+      "id": "club:manchester_united",
+      "type": "club",
+      "label": "Manchester United",
+      "count": 111
+    },
+    {
+      "id": "club:arsenal",
+      "type": "club",
+      "label": "Arsenal",
+      "count": 98
+    },
+    {
+      "id": "club:bayern_munich",
+      "type": "club",
+      "label": "Bayern Munich",
+      "count": 96
+    },
+    {
+      "id": "club:manchester_city",
+      "type": "club",
+      "label": "Manchester City",
+      "count": 91
+    },
+    {
+      "id": "nationality:italy",
+      "type": "nationality",
+      "label": "Italy",
+      "count": 90
+    },
+    {
+      "id": "club:tottenham_hotspur",
+      "type": "club",
+      "label": "Tottenham Hotspur",
+      "count": 86
+    },
+    {
+      "id": "club:paris_saint_germain",
+      "type": "club",
+      "label": "Paris Saint-Germain",
+      "count": 85
+    },
+    {
+      "id": "club:atletico_madrid",
+      "type": "club",
+      "label": "Atletico Madrid",
+      "count": 80
+    },
+    {
+      "id": "club:roma",
+      "type": "club",
+      "label": "Roma",
+      "count": 80
+    },
+    {
+      "id": "nationality:germany",
+      "type": "nationality",
+      "label": "Germany",
+      "count": 80
+    },
+    {
+      "id": "club:liverpool",
+      "type": "club",
+      "label": "Liverpool",
+      "count": 78
+    },
+    {
+      "id": "position_group:goalkeeper",
+      "type": "position_group",
+      "label": "Goalkeeper",
+      "count": 77
+    },
+    {
+      "id": "club:marseille",
+      "type": "club",
+      "label": "Marseille",
+      "count": 75
+    },
+    {
+      "id": "club:monaco",
+      "type": "club",
+      "label": "Monaco",
+      "count": 75
+    },
+    {
+      "id": "club:ajax",
+      "type": "club",
+      "label": "Ajax",
+      "count": 69
+    },
+    {
+      "id": "nationality:netherlands",
+      "type": "nationality",
+      "label": "Netherlands",
+      "count": 69
+    },
+    {
+      "id": "club:benfica",
+      "type": "club",
+      "label": "Benfica",
+      "count": 68
+    },
+    {
+      "id": "club:west_ham_united",
+      "type": "club",
+      "label": "West Ham United",
+      "count": 66
+    },
+    {
+      "id": "club:valencia",
+      "type": "club",
+      "label": "Valencia",
+      "count": 65
+    },
+    {
+      "id": "nationality:argentina",
+      "type": "nationality",
+      "label": "Argentina",
+      "count": 63
+    },
+    {
+      "id": "club:fiorentina",
+      "type": "club",
+      "label": "Fiorentina",
+      "count": 62
+    },
+    {
+      "id": "club:everton",
+      "type": "club",
+      "label": "Everton",
+      "count": 61
+    },
+    {
+      "id": "nationality:portugal",
+      "type": "nationality",
+      "label": "Portugal",
+      "count": 60
+    },
+    {
+      "id": "club:borussia_dortmund",
+      "type": "club",
+      "label": "Borussia Dortmund",
+      "count": 58
+    },
+    {
+      "id": "club:porto",
+      "type": "club",
+      "label": "Porto",
+      "count": 58
+    },
+    {
+      "id": "club:lyon",
+      "type": "club",
+      "label": "Lyon",
+      "count": 57
+    },
+    {
+      "id": "club:bayer_leverkusen",
+      "type": "club",
+      "label": "Bayer Leverkusen",
+      "count": 56
+    },
+    {
+      "id": "club:aston_villa",
+      "type": "club",
+      "label": "Aston Villa",
+      "count": 55
+    },
+    {
+      "id": "club:napoli",
+      "type": "club",
+      "label": "Napoli",
+      "count": 53
+    },
+    {
+      "id": "club:sevilla",
+      "type": "club",
+      "label": "Sevilla",
+      "count": 53
+    },
+    {
+      "id": "club:newcastle_united",
+      "type": "club",
+      "label": "Newcastle United",
+      "count": 52
+    },
+    {
+      "id": "club:rb_leipzig",
+      "type": "club",
+      "label": "RB Leipzig",
+      "count": 46
+    },
+    {
+      "id": "club:lazio",
+      "type": "club",
+      "label": "Lazio",
+      "count": 45
+    },
+    {
+      "id": "club:villarreal",
+      "type": "club",
+      "label": "Villarreal",
+      "count": 45
+    },
+    {
+      "id": "club:psv_eindhoven",
+      "type": "club",
+      "label": "PSV Eindhoven",
+      "count": 43
+    },
+    {
+      "id": "club:galatasaray",
+      "type": "club",
+      "label": "Galatasaray",
+      "count": 42
+    },
+    {
+      "id": "club:atalanta",
+      "type": "club",
+      "label": "Atalanta",
+      "count": 40
+    },
+    {
+      "id": "club:fenerbahce",
+      "type": "club",
+      "label": "Fenerbahce",
+      "count": 40
+    },
+    {
+      "id": "club:lille",
+      "type": "club",
+      "label": "Lille",
+      "count": 40
+    },
+    {
+      "id": "club:sporting_cp",
+      "type": "club",
+      "label": "Sporting CP",
+      "count": 40
+    },
+    {
+      "id": "club:fulham",
+      "type": "club",
+      "label": "Fulham",
+      "count": 39
+    },
+    {
+      "id": "club:nottingham_forest",
+      "type": "club",
+      "label": "Nottingham Forest",
+      "count": 38
+    },
+    {
+      "id": "club:real_betis",
+      "type": "club",
+      "label": "Real Betis",
+      "count": 37
+    },
+    {
+      "id": "nationality:belgium",
+      "type": "nationality",
+      "label": "Belgium",
+      "count": 37
+    },
+    {
+      "id": "club:leicester_city",
+      "type": "club",
+      "label": "Leicester City",
+      "count": 36
+    },
+    {
+      "id": "club:flamengo",
+      "type": "club",
+      "label": "Flamengo",
+      "count": 34
+    },
+    {
+      "id": "club:leeds_united",
+      "type": "club",
+      "label": "Leeds United",
+      "count": 34
+    },
+    {
+      "id": "club:brighton_and_hove_albion",
+      "type": "club",
+      "label": "Brighton & Hove Albion",
+      "count": 33
+    },
+    {
+      "id": "club:crystal_palace",
+      "type": "club",
+      "label": "Crystal Palace",
+      "count": 33
+    },
+    {
+      "id": "club:rennes",
+      "type": "club",
+      "label": "Rennes",
+      "count": 33
+    },
+    {
+      "id": "club:nice",
+      "type": "club",
+      "label": "Nice",
+      "count": 32
+    },
+    {
+      "id": "club:wolverhampton_wanderers",
+      "type": "club",
+      "label": "Wolverhampton Wanderers",
+      "count": 31
+    },
+    {
+      "id": "club:vfb_stuttgart",
+      "type": "club",
+      "label": "VfB Stuttgart",
+      "count": 30
+    },
+    {
+      "id": "club:real_sociedad",
+      "type": "club",
+      "label": "Real Sociedad",
+      "count": 29
+    },
+    {
+      "id": "club:sampdoria",
+      "type": "club",
+      "label": "Sampdoria",
+      "count": 29
+    },
+    {
+      "id": "club:southampton",
+      "type": "club",
+      "label": "Southampton",
+      "count": 29
+    },
+    {
+      "id": "club:afc_bournemouth",
+      "type": "club",
+      "label": "AFC Bournemouth",
+      "count": 28
+    },
+    {
+      "id": "club:besiktas",
+      "type": "club",
+      "label": "Besiktas",
+      "count": 26
+    },
+    {
+      "id": "club:genoa",
+      "type": "club",
+      "label": "Genoa",
+      "count": 26
+    },
+    {
+      "id": "club:parma",
+      "type": "club",
+      "label": "Parma",
+      "count": 26
+    },
+    {
+      "id": "club:river_plate",
+      "type": "club",
+      "label": "River Plate",
+      "count": 26
+    },
+    {
+      "id": "club:wolfsburg",
+      "type": "club",
+      "label": "Wolfsburg",
+      "count": 26
+    },
+    {
+      "id": "nationality:croatia",
+      "type": "nationality",
+      "label": "Croatia",
+      "count": 26
+    },
+    {
+      "id": "club:eintracht_frankfurt",
+      "type": "club",
+      "label": "Eintracht Frankfurt",
+      "count": 25
+    },
+    {
+      "id": "club:hoffenheim",
+      "type": "club",
+      "label": "Hoffenheim",
+      "count": 25
+    },
+    {
+      "id": "club:torino",
+      "type": "club",
+      "label": "Torino",
+      "count": 25
+    },
+    {
+      "id": "club:corinthians",
+      "type": "club",
+      "label": "Corinthians",
+      "count": 24
+    }
+  ],
+  "weakButUsefulCategories": [
+    {
+      "id": "club:1_fc_koln",
+      "type": "club",
+      "label": "1. FC Köln",
+      "count": 2
+    },
+    {
+      "id": "club:ado_den_haag",
+      "type": "club",
+      "label": "ADO Den Haag",
+      "count": 2
+    },
+    {
+      "id": "club:agf",
+      "type": "club",
+      "label": "AGF",
+      "count": 2
+    },
+    {
+      "id": "club:aik",
+      "type": "club",
+      "label": "AIK",
+      "count": 2
+    },
+    {
+      "id": "club:asec_mimosas",
+      "type": "club",
+      "label": "ASEC Mimosas",
+      "count": 2
+    },
+    {
+      "id": "club:al_ittihad_alexandria",
+      "type": "club",
+      "label": "Al Ittihad Alexandria",
+      "count": 2
+    },
+    {
+      "id": "club:al_nasr",
+      "type": "club",
+      "label": "Al Nasr",
+      "count": 2
+    },
+    {
+      "id": "club:al_shamal",
+      "type": "club",
+      "label": "Al-Shamal",
+      "count": 2
+    },
+    {
+      "id": "club:alanyaspor",
+      "type": "club",
+      "label": "Alanyaspor",
+      "count": 2
+    },
+    {
+      "id": "club:alessandria",
+      "type": "club",
+      "label": "Alessandria",
+      "count": 2
+    },
+    {
+      "id": "club:altinordu",
+      "type": "club",
+      "label": "Altinordu",
+      "count": 2
+    },
+    {
+      "id": "club:america_rj",
+      "type": "club",
+      "label": "America RJ",
+      "count": 2
+    },
+    {
+      "id": "club:america_de_cali",
+      "type": "club",
+      "label": "America de Cali",
+      "count": 2
+    },
+    {
+      "id": "club:amiens_sc",
+      "type": "club",
+      "label": "Amiens SC",
+      "count": 2
+    },
+    {
+      "id": "club:asante_kotoko",
+      "type": "club",
+      "label": "Asante Kotoko",
+      "count": 2
+    },
+    {
+      "id": "club:atletico_paranaense",
+      "type": "club",
+      "label": "Atletico Paranaense",
+      "count": 2
+    },
+    {
+      "id": "club:atletico_junior",
+      "type": "club",
+      "label": "Atlético Junior",
+      "count": 2
+    },
+    {
+      "id": "club:baniyas",
+      "type": "club",
+      "label": "Baniyas",
+      "count": 2
+    },
+    {
+      "id": "club:beerschot",
+      "type": "club",
+      "label": "Beerschot",
+      "count": 2
+    },
+    {
+      "id": "club:beira_mar",
+      "type": "club",
+      "label": "Beira-Mar",
+      "count": 2
+    },
+    {
+      "id": "club:belenenses",
+      "type": "club",
+      "label": "Belenenses",
+      "count": 2
+    },
+    {
+      "id": "club:boavista",
+      "type": "club",
+      "label": "Boavista",
+      "count": 2
+    },
+    {
+      "id": "club:borussia_dortmund_ii",
+      "type": "club",
+      "label": "Borussia Dortmund II",
+      "count": 2
+    },
+    {
+      "id": "club:botafogo_sp",
+      "type": "club",
+      "label": "Botafogo-SP",
+      "count": 2
+    },
+    {
+      "id": "club:bournemouth",
+      "type": "club",
+      "label": "Bournemouth",
+      "count": 2
+    },
+    {
+      "id": "club:bradford_city",
+      "type": "club",
+      "label": "Bradford City",
+      "count": 2
+    },
+    {
+      "id": "club:bragantino",
+      "type": "club",
+      "label": "Bragantino",
+      "count": 2
+    },
+    {
+      "id": "club:bristol_rovers",
+      "type": "club",
+      "label": "Bristol Rovers",
+      "count": 2
+    },
+    {
+      "id": "club:buducnost_titograd",
+      "type": "club",
+      "label": "Buducnost Titograd",
+      "count": 2
+    },
+    {
+      "id": "club:cfr_cluj",
+      "type": "club",
+      "label": "CFR Cluj",
+      "count": 2
+    },
+    {
+      "id": "club:cska_sofia",
+      "type": "club",
+      "label": "CSKA Sofia",
+      "count": 2
+    },
+    {
+      "id": "club:cadiz",
+      "type": "club",
+      "label": "Cadiz",
+      "count": 2
+    },
+    {
+      "id": "club:carlisle_united",
+      "type": "club",
+      "label": "Carlisle United",
+      "count": 2
+    },
+    {
+      "id": "club:carpi",
+      "type": "club",
+      "label": "Carpi",
+      "count": 2
+    },
+    {
+      "id": "club:cesena",
+      "type": "club",
+      "label": "Cesena",
+      "count": 2
+    },
+    {
+      "id": "club:charleroi",
+      "type": "club",
+      "label": "Charleroi",
+      "count": 2
+    },
+    {
+      "id": "club:chennaiyin",
+      "type": "club",
+      "label": "Chennaiyin",
+      "count": 2
+    },
+    {
+      "id": "club:chesterfield",
+      "type": "club",
+      "label": "Chesterfield",
+      "count": 2
+    },
+    {
+      "id": "club:clermont",
+      "type": "club",
+      "label": "Clermont",
+      "count": 2
+    },
+    {
+      "id": "club:colorado_rapids",
+      "type": "club",
+      "label": "Colorado Rapids",
+      "count": 2
+    },
+    {
+      "id": "club:columbus_crew",
+      "type": "club",
+      "label": "Columbus Crew",
+      "count": 2
+    },
+    {
+      "id": "club:cordoba",
+      "type": "club",
+      "label": "Cordoba",
+      "count": 2
+    },
+    {
+      "id": "club:cracovia",
+      "type": "club",
+      "label": "Cracovia",
+      "count": 2
+    },
+    {
+      "id": "club:crotone",
+      "type": "club",
+      "label": "Crotone",
+      "count": 2
+    },
+    {
+      "id": "club:dalian_professional",
+      "type": "club",
+      "label": "Dalian Professional",
+      "count": 2
+    },
+    {
+      "id": "club:defensor_sporting",
+      "type": "club",
+      "label": "Defensor Sporting",
+      "count": 2
+    },
+    {
+      "id": "club:deportivo_cali",
+      "type": "club",
+      "label": "Deportivo Cali",
+      "count": 2
+    },
+    {
+      "id": "club:dinamo_bucuresti",
+      "type": "club",
+      "label": "Dinamo Bucuresti",
+      "count": 2
+    },
+    {
+      "id": "club:dinamo_tbilisi",
+      "type": "club",
+      "label": "Dinamo Tbilisi",
+      "count": 2
+    },
+    {
+      "id": "club:doncaster_rovers",
+      "type": "club",
+      "label": "Doncaster Rovers",
+      "count": 2
+    },
+    {
+      "id": "club:dukla_prague",
+      "type": "club",
+      "label": "Dukla Prague",
+      "count": 2
+    },
+    {
+      "id": "club:dundee",
+      "type": "club",
+      "label": "Dundee",
+      "count": 2
+    },
+    {
+      "id": "club:dynamo_dresden",
+      "type": "club",
+      "label": "Dynamo Dresden",
+      "count": 2
+    },
+    {
+      "id": "club:eintracht_braunschweig",
+      "type": "club",
+      "label": "Eintracht Braunschweig",
+      "count": 2
+    },
+    {
+      "id": "club:envigado",
+      "type": "club",
+      "label": "Envigado",
+      "count": 2
+    },
+    {
+      "id": "club:excelsior_rotterdam",
+      "type": "club",
+      "label": "Excelsior Rotterdam",
+      "count": 2
+    },
+    {
+      "id": "club:fc_basel",
+      "type": "club",
+      "label": "FC Basel",
+      "count": 2
+    },
+    {
+      "id": "club:fc_dallas",
+      "type": "club",
+      "label": "FC Dallas",
+      "count": 2
+    },
+    {
+      "id": "club:fc_koln",
+      "type": "club",
+      "label": "FC Koln",
+      "count": 2
+    },
+    {
+      "id": "club:fc_st_pauli",
+      "type": "club",
+      "label": "FC St. Pauli",
+      "count": 2
+    },
+    {
+      "id": "club:fc_tokyo",
+      "type": "club",
+      "label": "FC Tokyo",
+      "count": 2
+    },
+    {
+      "id": "club:famalicao",
+      "type": "club",
+      "label": "Famalicão",
+      "count": 2
+    },
+    {
+      "id": "club:fatih_karagumruk",
+      "type": "club",
+      "label": "Fatih Karagumruk",
+      "count": 2
+    },
+    {
+      "id": "club:figueirense",
+      "type": "club",
+      "label": "Figueirense",
+      "count": 2
+    },
+    {
+      "id": "club:frosinone",
+      "type": "club",
+      "label": "Frosinone",
+      "count": 2
+    },
+    {
+      "id": "club:gil_vicente",
+      "type": "club",
+      "label": "Gil Vicente",
+      "count": 2
+    },
+    {
+      "id": "club:go_ahead_eagles",
+      "type": "club",
+      "label": "Go Ahead Eagles",
+      "count": 2
+    },
+    {
+      "id": "club:goa",
+      "type": "club",
+      "label": "Goa",
+      "count": 2
+    },
+    {
+      "id": "club:goias",
+      "type": "club",
+      "label": "Goias",
+      "count": 2
+    },
+    {
+      "id": "club:gornik_zabrze",
+      "type": "club",
+      "label": "Gornik Zabrze",
+      "count": 2
+    },
+    {
+      "id": "club:grasshopper",
+      "type": "club",
+      "label": "Grasshopper",
+      "count": 2
+    },
+    {
+      "id": "club:grasshoppers",
+      "type": "club",
+      "label": "Grasshoppers",
+      "count": 2
+    },
+    {
+      "id": "club:greuther_furth",
+      "type": "club",
+      "label": "Greuther Fürth",
+      "count": 2
+    },
+    {
+      "id": "club:gyeongju_khnp",
+      "type": "club",
+      "label": "Gyeongju KHNP",
+      "count": 2
+    },
+    {
+      "id": "club:hebei_china_fortune",
+      "type": "club",
+      "label": "Hebei China Fortune",
+      "count": 2
+    },
+    {
+      "id": "club:hercules",
+      "type": "club",
+      "label": "Hercules",
+      "count": 2
+    },
+    {
+      "id": "club:hibernian",
+      "type": "club",
+      "label": "Hibernian",
+      "count": 2
+    },
+    {
+      "id": "club:hrvatski_dragovoljac",
+      "type": "club",
+      "label": "Hrvatski Dragovoljac",
+      "count": 2
+    },
+    {
+      "id": "club:istres",
+      "type": "club",
+      "label": "Istres",
+      "count": 2
+    },
+    {
+      "id": "club:jeonbuk_hyundai_motors",
+      "type": "club",
+      "label": "Jeonbuk Hyundai Motors",
+      "count": 2
+    },
+    {
+      "id": "club:junior",
+      "type": "club",
+      "label": "Junior",
+      "count": 2
+    },
+    {
+      "id": "club:kawasaki_frontale",
+      "type": "club",
+      "label": "Kawasaki Frontale",
+      "count": 2
+    },
+    {
+      "id": "club:kayserispor",
+      "type": "club",
+      "label": "Kayserispor",
+      "count": 2
+    },
+    {
+      "id": "club:kitchee",
+      "type": "club",
+      "label": "Kitchee",
+      "count": 2
+    },
+    {
+      "id": "club:konyaspor",
+      "type": "club",
+      "label": "Konyaspor",
+      "count": 2
+    },
+    {
+      "id": "club:kortrijk",
+      "type": "club",
+      "label": "Kortrijk",
+      "count": 2
+    },
+    {
+      "id": "club:kosice",
+      "type": "club",
+      "label": "Kosice",
+      "count": 2
+    },
+    {
+      "id": "club:kremser_sc",
+      "type": "club",
+      "label": "Kremser SC",
+      "count": 2
+    },
+    {
+      "id": "club:kuban_krasnodar",
+      "type": "club",
+      "label": "Kuban Krasnodar",
+      "count": 2
+    },
+    {
+      "id": "club:ldu_quito",
+      "type": "club",
+      "label": "LDU Quito",
+      "count": 2
+    },
+    {
+      "id": "club:lausanne_sport",
+      "type": "club",
+      "label": "Lausanne-Sport",
+      "count": 2
+    },
+    {
+      "id": "club:le_mans",
+      "type": "club",
+      "label": "Le Mans",
+      "count": 2
+    },
+    {
+      "id": "club:lech_poznan",
+      "type": "club",
+      "label": "Lech Poznan",
+      "count": 2
+    },
+    {
+      "id": "club:leyton_orient",
+      "type": "club",
+      "label": "Leyton Orient",
+      "count": 2
+    },
+    {
+      "id": "club:liberty_professionals",
+      "type": "club",
+      "label": "Liberty Professionals",
+      "count": 2
+    },
+    {
+      "id": "club:lincoln_city",
+      "type": "club",
+      "label": "Lincoln City",
+      "count": 2
+    },
+    {
+      "id": "club:livorno",
+      "type": "club",
+      "label": "Livorno",
+      "count": 2
+    },
+    {
+      "id": "club:los_angeles_aztecs",
+      "type": "club",
+      "label": "Los Angeles Aztecs",
+      "count": 2
+    },
+    {
+      "id": "club:lugano",
+      "type": "club",
+      "label": "Lugano",
+      "count": 2
+    },
+    {
+      "id": "club:luzern",
+      "type": "club",
+      "label": "Luzern",
+      "count": 2
+    }
+  ],
+  "duplicateNameGroupsCount": 15,
+  "duplicateNameGroupsSample": {
+    "zlatan ibrahimovic": [
+      "zlatan_ibrahimovi",
+      "zlatan_ibrahimovic"
+    ],
+    "miralem pjanic": [
+      "miralem_pjani",
+      "miralem_pjanic"
+    ],
+    "nemanja matic": [
+      "nemanja_mati",
+      "nemanja_matic"
+    ],
+    "yaya toure": [
+      "yaya_tour",
+      "yaya_toure"
+    ],
+    "emilio butragueno": [
+      "emilio_butragueno",
+      "emilio_butragueno_2"
+    ],
+    "michel": [
+      "michel",
+      "michel_2"
+    ],
+    "vitor baia": [
+      "vitor_baia",
+      "vitor_baia_2"
+    ],
+    "alvaro recoba": [
+      "alvaro_recoba",
+      "alvaro_recoba_2"
+    ],
+    "rafael marquez": [
+      "rafael_marquez",
+      "rafael_marquez_2"
+    ],
+    "robert pires": [
+      "robert_pires",
+      "robert_pires_2"
+    ],
+    "claude makelele": [
+      "claude_makelele",
+      "claude_makelele_2"
+    ],
+    "diego forlan": [
+      "diego_forlan",
+      "diego_forlan_2"
+    ],
+    "socrates": [
+      "socrates",
+      "socrates_2"
+    ],
+    "dejan stankovic": [
+      "dejan_stankovic",
+      "dejan_stankovi"
+    ],
+    "cuauhtemoc blanco": [
+      "cuauhtemoc_blanco",
+      "cuauhtemoc_blanco_2"
+    ]
+  },
+  "blockedFactSources": [
+    "hints text",
+    "candidateHonours",
+    "candidateAwards",
+    "candidateGridTags",
+    "manager links without verified career years",
+    "teammate links without verified career-year overlap"
+  ],
+  "safeFactSourcesForGrid": [
+    "nationality",
+    "clubs.name",
+    "position -> position_group",
+    "verifiedGridTags",
+    "honours[].id where verified == true or sourceType == verified",
+    "awards[].id where verified == true or sourceType == verified"
+  ]
+}

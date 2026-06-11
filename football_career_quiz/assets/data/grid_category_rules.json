@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "purpose": "Career Grid/Tic-Tac-Toe validation rules. Only core database fields and verified fields are used for playable grid cells.",
+  "safeFactSourcesForGrid": [
+    "nationality",
+    "clubs.name",
+    "position -> position_group",
+    "verifiedGridTags",
+    "honours[].id where verified == true or sourceType == verified",
+    "awards[].id where verified == true or sourceType == verified"
+  ],
+  "blockedFactSourcesForGrid": [
+    "hints text",
+    "candidateHonours",
+    "candidateAwards",
+    "candidateGridTags",
+    "manager links without verified career years",
+    "teammate links without verified career-year overlap"
+  ],
+  "axisTypesAllowed": [
+    "nationality",
+    "club",
+    "position_group",
+    "verified_grid_tag",
+    "verified_honour",
+    "verified_award"
+  ],
+  "axisTypesBlockedForNow": [
+    "played_with_player",
+    "managed_by_manager",
+    "manager",
+    "league",
+    "candidate_honour",
+    "candidate_award"
+  ],
+  "difficultyThresholds": {
+    "casual": {
+      "minAnswersPerCell": 8,
+      "description": "Good for normal players. Avoids unfair cells."
+    },
+    "rising_star": {
+      "minAnswersPerCell": 5,
+      "description": "Normal/fun challenge."
+    },
+    "pro": {
+      "minAnswersPerCell": 3,
+      "description": "Hard but fair."
+    },
+    "elite": {
+      "minAnswersPerCell": 2,
+      "description": "Very hard."
+    },
+    "legend": {
+      "minAnswersPerCell": 1,
+      "description": "Only for expert/rare challenge; use carefully."
+    }
+  },
+  "cellGenerationPolicy": {
+    "neverGenerateIfAnswerCountBelowDifficultyThreshold": true,
+    "showDatabaseOnlyWarningForTypedAnswerNotFound": true,
+    "supportMissingAnswerReports": true,
+    "preferSuggestionSelectionOverFreeText": true
+  }
+}
